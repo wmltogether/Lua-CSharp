@@ -1,3 +1,5 @@
+using Lua.Standard;
+
 namespace Lua.Tests;
 
 [LuaObject]
@@ -24,6 +26,8 @@ public partial class TestUserData
     [LuaMember]
     public static double StaticMethodWithReturnValue(double a, double b)
     {
+        Console.WriteLine(a);
+        Console.WriteLine(b);
         return a + b;
     }
 
@@ -31,6 +35,12 @@ public partial class TestUserData
     public double InstanceMethodWithReturnValue()
     {
         return Property;
+    }
+
+    [LuaMetamethod(LuaObjectMetamethod.Call)]
+    public string Call()
+    {
+        return "Called!";
     }
 }
 
@@ -99,10 +109,10 @@ public class LuaObjectTests
 
         var state = LuaState.Create();
         state.Environment["test"] = userData;
-        var results = await state.DoStringAsync("return test.StaticMethodWithReturnValue(1, 2)");
+        var results = await state.DoStringAsync("return test.StaticMethodWithReturnValue(1, -2)");
 
         Assert.That(results, Has.Length.EqualTo(1));
-        Assert.That(results[0], Is.EqualTo(new LuaValue(3)));
+        Assert.That(results[0], Is.EqualTo(new LuaValue(-1)));
     }
 
     [Test]
@@ -119,5 +129,22 @@ public class LuaObjectTests
 
         Assert.That(results, Has.Length.EqualTo(1));
         Assert.That(results[0], Is.EqualTo(new LuaValue(1)));
+    }
+
+    [Test]
+    public async Task Test_CallMetamethod()
+    {
+        var userData = new TestUserData();
+
+        var state = LuaState.Create();
+        state.OpenBasicLibrary();
+        state.Environment["test"] = userData;
+        var results = await state.DoStringAsync("""
+                                                assert(test() == 'Called!')
+                                                return test()
+                                                """);
+
+        Assert.That(results, Has.Length.EqualTo(1));
+        Assert.That(results[0], Is.EqualTo(new LuaValue("Called!")));
     }
 }
