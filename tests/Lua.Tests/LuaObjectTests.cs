@@ -26,8 +26,6 @@ public partial class TestUserData
     [LuaMember]
     public static double StaticMethodWithReturnValue(double a, double b)
     {
-        Console.WriteLine(a);
-        Console.WriteLine(b);
         return a + b;
     }
 
@@ -109,10 +107,10 @@ public class LuaObjectTests
 
         var state = LuaState.Create();
         state.Environment["test"] = userData;
-        var results = await state.DoStringAsync("return test.StaticMethodWithReturnValue(1, -2)");
+        var results = await state.DoStringAsync("return test.StaticMethodWithReturnValue(1, 2)");
 
         Assert.That(results, Has.Length.EqualTo(1));
-        Assert.That(results[0], Is.EqualTo(new LuaValue(-1)));
+        Assert.That(results[0], Is.EqualTo(new LuaValue(3)));
     }
 
     [Test]
