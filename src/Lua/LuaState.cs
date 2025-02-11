@@ -16,6 +16,7 @@ public sealed class LuaState
     FastStackCore<LuaThread> threadStack;
     readonly LuaTable packages = new();
     readonly LuaTable environment;
+    readonly LuaTable registry = new();
     readonly UpValue envUpValue;
     bool isRunning;
 
@@ -24,6 +25,7 @@ public sealed class LuaState
     internal ref FastListCore<UpValue> OpenUpValues => ref openUpValues;
 
     public LuaTable Environment => environment;
+    public LuaTable Registry => registry;
     public LuaTable LoadedModules => packages;
     public LuaMainThread MainThread => mainThread;
     public LuaThread CurrentThread

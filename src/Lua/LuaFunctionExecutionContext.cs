@@ -37,6 +37,16 @@ public readonly record struct LuaFunctionExecutionContext
         ThrowIfArgumentNotExists(index);
         return Arguments[index];
     }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal LuaValue GetArgumentOrDefault(int index, LuaValue defaultValue = default)
+    {
+        if (ArgumentCount <= index)
+        {
+            return defaultValue;
+        }
+        return Arguments[index];
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T GetArgument<T>(int index)
@@ -62,6 +72,40 @@ public readonly record struct LuaFunctionExecutionContext
         }
 
         return argValue;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal T GetArgumentOrDefault<T>(int index,T defaultValue =default!) 
+    {
+        if (ArgumentCount <= index)
+        {
+            return defaultValue;
+        }
+
+        var arg = Arguments[index];
+        if (!arg.TryRead<T>(out var argValue))
+        {
+            var t = typeof(T);
+            if ((t == typeof(int) || t == typeof(long)) && arg.TryReadNumber(out _))
+            {
+                LuaRuntimeException.BadArgumentNumberIsNotInteger(State.GetTraceback(), index + 1, Thread.GetCurrentFrame().Function.Name);
+            }
+            else if (LuaValue.TryGetLuaValueType(t, out var type))
+            {
+                LuaRuntimeException.BadArgument(State.GetTraceback(), index + 1, Thread.GetCurrentFrame().Function.Name, type.ToString(), arg.Type.ToString());
+            }
+            else
+            {
+                LuaRuntimeException.BadArgument(State.GetTraceback(), index + 1, Thread.GetCurrentFrame().Function.Name, t.Name, arg.Type.ToString());
+            }
+        }
+
+        return argValue;
+    }
+    
+    internal void ThrowBadArgument(int index, string message)
+    {
+        LuaRuntimeException.BadArgument(State.GetTraceback(), index, Thread.GetCurrentFrame().Function.Name, message);
     }
 
     void ThrowIfArgumentNotExists(int index)

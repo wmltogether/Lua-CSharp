@@ -466,9 +466,11 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
                 context.AddLocalVariable(identifier.Name, new()
                 {
                     RegisterIndex = (byte)(context.StackPosition - 1),
+                    StartPc = context.Function.Instructions.Length,
                 });
             }
         }
+
         return true;
     }
 
@@ -598,6 +600,7 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
         context.AddLocalVariable(node.Name, new()
         {
             RegisterIndex = context.StackPosition,
+            StartPc = context.Function.Instructions.Length,
         });
 
         // compile function
@@ -678,6 +681,7 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
             funcContext.Scope.AddLocalVariable("self".AsMemory(), new()
             {
                 RegisterIndex = 0,
+                StartPc = 0,
             });
 
             funcContext.Scope.StackPosition++;
@@ -690,6 +694,7 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
             funcContext.Scope.AddLocalVariable(parameter.Name, new()
             {
                 RegisterIndex = (byte)(i + (hasSelfParameter ? 1 : 0)),
+                StartPc = 0,
             });
 
             funcContext.Scope.StackPosition++;
@@ -905,10 +910,29 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
         context.Function.LoopLevel++;
         using var scopeContext = context.CreateChildScope();
         {
+            scopeContext.AddLocalVariable("(for index)".AsMemory(), new()
+            {
+                RegisterIndex = startPosition,
+                StartPc = context.Function.Instructions.Length,
+            });
+
+            scopeContext.AddLocalVariable("(for limit)".AsMemory(), new()
+            {
+                RegisterIndex = (byte)(startPosition + 1),
+                StartPc = context.Function.Instructions.Length,
+            });
+
+            scopeContext.AddLocalVariable("(for step)".AsMemory(), new()
+            {
+                RegisterIndex = (byte)(startPosition + 2),
+                StartPc = context.Function.Instructions.Length,
+            });
+
             // add local variable
             scopeContext.AddLocalVariable(node.VariableName, new()
             {
-                RegisterIndex = startPosition
+                RegisterIndex = (byte)(startPosition + 3),
+                StartPc = context.Function.Instructions.Length,
             });
 
             foreach (var childNode in node.StatementNodes)
@@ -949,13 +973,32 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
         {
             scopeContext.StackPosition = (byte)(startPosition + 3 + node.Names.Length);
 
+            scopeContext.AddLocalVariable("(for generator)".AsMemory(), new()
+            {
+                RegisterIndex = (byte)(startPosition),
+                StartPc = context.Function.Instructions.Length,
+            });
+
+            scopeContext.AddLocalVariable("(for state)".AsMemory(), new()
+            {
+                RegisterIndex = (byte)(startPosition + 1),
+                StartPc = context.Function.Instructions.Length,
+            });
+
+            scopeContext.AddLocalVariable("(for control)".AsMemory(), new()
+            {
+                RegisterIndex = (byte)(startPosition + 2),
+                StartPc = context.Function.Instructions.Length,
+            });
+
             // add local variables
             for (int i = 0; i < node.Names.Length; i++)
             {
                 var name = node.Names[i];
                 scopeContext.AddLocalVariable(name.Name, new()
                 {
-                    RegisterIndex = (byte)(startPosition + 3 + i)
+                    RegisterIndex = (byte)(startPosition + 3 + i),
+                    StartPc = context.Function.Instructions.Length,
                 });
             }
 

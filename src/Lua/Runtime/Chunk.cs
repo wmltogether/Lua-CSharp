@@ -11,6 +11,7 @@ public sealed class Chunk
     public required SourcePosition[] SourcePositions { get; init; }
     public required LuaValue[] Constants { get; init; }
     public required UpValueInfo[] UpValues { get; init; }
+    public required LocalValueInfo[] Locals { get; init; }
     public required Chunk[] Functions { get; init; }
     public required int ParameterCount { get; init; }
     

@@ -60,6 +60,7 @@ public class FunctionCompilationContext : IDisposable
 
     // upvalues
     FastListCore<UpValueInfo> upvalues;
+    FastListCore<LocalValueInfo> localVariables;
 
     // loop
     FastListCore<BreakDescription> breakQueue;
@@ -301,6 +302,17 @@ public class FunctionCompilationContext : IDisposable
             return false;
         }
     }
+    
+    public void AddLocalVariable(ReadOnlyMemory<char> name, LocalVariableDescription description)
+    {
+        localVariables.Add(new LocalValueInfo()
+        {
+            Name = name,
+            Index = description.RegisterIndex,
+            StartPc = description.StartPc,
+            EndPc = Instructions.Length,
+        });
+    }
 
     public void AddUpValue(UpValueInfo upValue)
     {
@@ -410,7 +422,9 @@ public class FunctionCompilationContext : IDisposable
         // add return
         instructions.Add(Instruction.Return(0, 1));
         instructionPositions.Add(instructionPositions.Length == 0 ? default : instructionPositions[^1]);
-
+        Scope.RegisterLocalsToFunction();
+        var locals = localVariables.AsSpan().ToArray();
+        Array.Sort(locals, (x, y) => x.Index.CompareTo(y.Index));
         var chunk = new Chunk()
         {
             Name = ChunkName ?? "chunk",
@@ -418,6 +432,7 @@ public class FunctionCompilationContext : IDisposable
             SourcePositions = instructionPositions.AsSpan().ToArray(),
             Constants = constants.AsSpan().ToArray(),
             UpValues = upvalues.AsSpan().ToArray(),
+            Locals = locals,
             Functions = functions.AsSpan().ToArray(),
             ParameterCount = ParameterCount,
             MaxStackPosition = MaxStackPosition,
@@ -442,6 +457,7 @@ public class FunctionCompilationContext : IDisposable
         constantIndexMap.Clear();
         constants.Clear();
         upvalues.Clear();
+        localVariables.Clear();
         functionMap.Clear();
         functions.Clear();
         breakQueue.Clear();

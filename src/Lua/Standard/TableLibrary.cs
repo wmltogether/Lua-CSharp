@@ -41,6 +41,7 @@ public sealed class TableLibrary
         ],
         ParameterCount = 2,
         UpValues = [],
+        Locals = [new LocalValueInfo(){Name = "a".AsMemory(),StartPc = 0,Index = 0,EndPc = 4}, new LocalValueInfo(){Name = "b".AsMemory(),StartPc = 0,Index = 1,EndPc = 4}],
         MaxStackPosition = 2,
     };
 
