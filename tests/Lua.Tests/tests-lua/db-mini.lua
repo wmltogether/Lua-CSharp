@@ -53,6 +53,22 @@ local mt = {
         return o+k
     end
 }
+
+local a = 1
+local b = 2
+local function f()
+    return a
+end
+local function g()
+    return b
+end
+
+debug.upvaluejoin(f,1,g,1)
+
+assert(f() == 2)
+b=3
+assert(f() == 3)
+
 debug.setmetatable(10, mt)
 assert(debug.getmetatable(10) == mt)
 a = 10

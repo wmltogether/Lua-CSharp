@@ -18,7 +18,8 @@ public class DebugLibrary
             new("getmetatable", GetMetatable),
             new("setmetatable", SetMetatable),
             new("traceback", Traceback),
-            new("getregistry", GetRegistry)
+            new("getregistry", GetRegistry),
+            new("upvaluejoin", UpValueJoin)
         ];
     }
 
@@ -282,5 +283,34 @@ public class DebugLibrary
     {
         buffer.Span[0] = context.State.Registry;
         return new(1);
+    }
+
+    public ValueTask<int> UpValueJoin(LuaFunctionExecutionContext context, Memory<LuaValue> buffer, CancellationToken cancellationToken)
+    {
+        var n2 = context.GetArgument<int>(3);
+        var f2 = context.GetArgument<LuaFunction>(2);
+        var n1 = context.GetArgument<int>(1);
+        var f1 = context.GetArgument<LuaFunction>(0);
+
+        if (f1 is not Closure closure1 || f2 is not Closure closure2)
+        {
+            buffer.Span[0] = LuaValue.Nil;
+            return new(1);
+        }
+
+        var upValues1 = closure1.GetUpValuesSpan();
+        var upValues2 = closure2.GetUpValuesSpan();
+        if (n1 <= 0 || n1 > upValues1.Length)
+        {
+            context.ThrowBadArgument(1, "invalid upvalue index");
+        }
+
+        if (n2 < 0 || n2 > upValues2.Length)
+        {
+            context.ThrowBadArgument(3, "invalid upvalue index");
+        }
+
+        upValues1[n1 - 1] = upValues2[n2 - 1];
+        return new(0);
     }
 }
