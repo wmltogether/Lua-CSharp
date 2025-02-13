@@ -200,7 +200,7 @@ public sealed class BasicLibrary
         {
             if (arg0.TryRead<string>(out var str))
             {
-                var chunk = LuaCompiler.Default.Compile(str, arg1 ?? "chunk");
+                var chunk = LuaCompiler.Default.Compile(str, arg1 ?? str);
                 buffer.Span[0] = new Closure(context.State, chunk, arg3);
                 return new(1);
             }
