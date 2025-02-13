@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Lua.Runtime;
 using Lua.Internal;
+
 namespace Lua.Standard;
 
 public class DebugLibrary
@@ -256,8 +257,7 @@ public class DebugLibrary
         var thread = GetLuaThread(context, out var argOffset);
 
         var message = context.GetArgumentOrDefault(argOffset);
-        var level = context.GetArgumentOrDefault<int>(argOffset + 1, 0);
-
+        var level = context.GetArgumentOrDefault<int>(argOffset + 1, argOffset == 0 ? 1 : 0);
 
         if (message.Type is not (LuaValueType.Nil or LuaValueType.String or LuaValueType.Number))
         {
@@ -270,8 +270,9 @@ public class DebugLibrary
             buffer.Span[0] = LuaValue.Nil;
             return new(1);
         }
-
-        thread.PushCallStackFrame(thread.GetCurrentFrame());
+        
+        var currentFrame =thread.GetCallStackFrames().Length>0? thread.GetCallStackFrames()[^1]:default;
+        thread.PushCallStackFrame(currentFrame);
         var callStack = thread.GetCallStackFrames();
         var skipCount = Math.Min(level, callStack.Length - 1);
         var frames = callStack[1..^skipCount];
@@ -319,7 +320,7 @@ public class DebugLibrary
     {
         //return new(0);
         var thread = GetLuaThread(context, out var argOffset);
-        string what = context.GetArgumentOrDefault<string>(argOffset + 1,"flnStu");
+        string what = context.GetArgumentOrDefault<string>(argOffset + 1, "flnStu");
         CallStackFrame? previousFrame = null;
         CallStackFrame? currentFrame = null;
         int pc = 0;
@@ -332,20 +333,20 @@ public class DebugLibrary
         else if (arg1.TryReadNumber(out _))
         {
             var level = context.GetArgument<int>(argOffset) + 1;
-            
+
             var callStack = thread.GetCallStackFrames();
             if (level <= 0 || level > callStack.Length)
             {
                 context.ThrowBadArgument(1, "level out of range");
             }
+
             currentFrame = thread.GetCallStackFrames()[^(level)];
             functionToInspect = currentFrame.Value.Function;
-            previousFrame = level +1 <= callStack.Length?callStack[^(level + 1)]:null;
-            if(level!=0)
+            previousFrame = level + 1 <= callStack.Length ? callStack[^(level + 1)] : null;
+            if (level != 0)
             {
                 pc = thread.GetCallStackFrames()[^(level - 1)].CallerInstructionIndex;
             }
-            
         }
         else
         {
@@ -365,7 +366,8 @@ public class DebugLibrary
             table["short_src"] = debug.ShortSource.ToString();
             table["linedefined"] = debug.LineDefined;
             table["lastlinedefined"] = debug.LastLineDefined;
-            table["what"] = debug.What?? LuaValue.Nil;;
+            table["what"] = debug.What ?? LuaValue.Nil;
+            ;
         }
 
         if (what.Contains('l'))
@@ -382,8 +384,10 @@ public class DebugLibrary
 
         if (what.Contains('n'))
         {
-            table["name"] = debug.Name?? LuaValue.Nil;;
-            table["namewhat"] = debug.NameWhat?? LuaValue.Nil;;
+            table["name"] = debug.Name ?? LuaValue.Nil;
+            ;
+            table["namewhat"] = debug.NameWhat ?? LuaValue.Nil;
+            ;
         }
 
         if (what.Contains('t'))

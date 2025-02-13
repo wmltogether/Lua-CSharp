@@ -83,22 +83,44 @@ public class Traceback
                 if (index > 0 && caller is Closure callerClosure)
                 {
                     var t = LuaDebug.GetFuncName(callerClosure.Proto, stackFrames[index - 1].CallerInstructionIndex, out var name);
-                    if (t is not null and not "global")
+                    if (t is not null)
                     {
-                        list.AddRange(t);
-                        list.AddRange(" '");
-                        list.AddRange(name);
-                        list.AddRange("'\n");
+                        if (t is "global")
+                        {
+                            list.AddRange("function '");
+                            list.AddRange(name);
+                            list.AddRange("'\n");
+                        }
+                        else
+                        {
+                            list.AddRange(t);
+                            list.AddRange(" '");
+                            list.AddRange(name);
+                            list.AddRange("'\n");
+                        }
+
                         continue;
                     }
                 }
 
-                list.AddRange("function '");
-                list.AddRange(p.Name);
-                list.AddRange("\n");
+                if (p.Name != "")
+                {
+                    list.AddRange("function '");
+                    list.AddRange(p.Name);
+                    list.AddRange("'\n");
+                }
+                else
+                {
+                    list.AddRange("function <");
+                    list.AddRange(shortSourceBuffer[..len]);
+                    list.AddRange(":");
+                    p.LineDefined.TryFormat(intFormatBuffer, out charsWritten, provider: CultureInfo.InvariantCulture);
+                    list.AddRange(intFormatBuffer[..charsWritten]);
+                    list.AddRange(">\n");
+                }
             }
         }
 
-        return list.AsSpan().ToString();
+        return list.AsSpan()[..^1].ToString();
     }
 }

@@ -379,7 +379,7 @@ internal readonly struct LuaDebug : IDisposable
 
     static void GetConstantName(Chunk p, int pc, int c, out string name)
     {
-        if (c > 256)
+        if (c >= 256)
         {
             /* is 'c' a constant? */
             ref var kvalue = ref p.Constants[c - 256];
@@ -435,6 +435,7 @@ internal readonly struct LuaDebug : IDisposable
                     {
                         int k = i.C; /* key index */
                         int t = i.B; /* table index */
+                        
                         var vn = (op == OpCode.GetTable) /* name of indexed variable */
                             ? GetLocalName(chunk, t + 1, pc)
                             : chunk.UpValues[t].Name.ToString();
