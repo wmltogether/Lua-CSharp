@@ -64,6 +64,7 @@ public ref struct Parser
 
                                 return ParseAssignmentStatement(firstExpression, ref enumerator);
                             }
+
                             break;
                     }
                 }
@@ -168,7 +169,7 @@ public ref struct Parser
         var doToken = enumerator.Current;
 
         // parse statements
-        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End);
+        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End, out _);
 
         return new DoStatementNode(statements, doToken.Position);
     }
@@ -208,6 +209,7 @@ public ref struct Parser
             enumerator.MovePrevious();
             return new AssignmentStatementNode(leftNodes.AsSpan().ToArray(), [], firstExpression.Position);
         }
+
         MoveNextWithValidation(ref enumerator);
 
         // parse expressions
@@ -227,6 +229,7 @@ public ref struct Parser
             enumerator.MovePrevious();
             return new LocalAssignmentStatementNode(identifiers, [], localToken.Position);
         }
+
         MoveNextWithValidation(ref enumerator);
 
         // parse expressions
@@ -353,7 +356,7 @@ public ref struct Parser
         CheckCurrent(ref enumerator, SyntaxTokenType.Do);
 
         // parse statements
-        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End);
+        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End, out _);
 
         return new WhileStatementNode(condition, statements, whileToken.Position);
     }
@@ -365,7 +368,7 @@ public ref struct Parser
         var repeatToken = enumerator.Current;
 
         // parse statements
-        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.Until);
+        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.Until, out _);
 
         // skip 'until keyword'
         CheckCurrentAndSkip(ref enumerator, SyntaxTokenType.Until, out _);
@@ -418,11 +421,12 @@ public ref struct Parser
 
         // skip 'do' keyword
         CheckCurrent(ref enumerator, SyntaxTokenType.Do);
+        var doToken = enumerator.Current;
 
         // parse statements
-        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End);
+        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End, out _);
 
-        return new NumericForStatementNode(varName, initialValueNode, limitNode, stepNode, statements, forToken.Position);
+        return new NumericForStatementNode(varName, initialValueNode, limitNode, stepNode, statements, forToken.Position, doToken.Position);
     }
 
     GenericForStatementNode ParseGenericForStatement(ref SyntaxTokenEnumerator enumerator, SyntaxToken forToken)
@@ -433,33 +437,33 @@ public ref struct Parser
         // skip 'in' keyword
         CheckCurrentAndSkip(ref enumerator, SyntaxTokenType.In, out _);
         enumerator.SkipEoL();
-
+        var iteratorToken = enumerator.Current;
         var expressions = ParseExpressionList(ref enumerator);
         MoveNextWithValidation(ref enumerator);
         enumerator.SkipEoL();
 
         // skip 'do' keyword
         CheckCurrent(ref enumerator, SyntaxTokenType.Do);
-
+        var doToken = enumerator.Current;
         // parse statements
-        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End);
+        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End, out var endToken);
 
-        return new GenericForStatementNode(identifiers, expressions, statements, forToken.Position);
+        return new GenericForStatementNode(identifiers, expressions, statements, iteratorToken.Position, doToken.Position, endToken.Position);
     }
 
     FunctionDeclarationStatementNode ParseFunctionDeclarationStatement(ref SyntaxTokenEnumerator enumerator, SyntaxToken functionToken)
     {
-        var (Name, Identifiers, Statements, HasVariableArgments) = ParseFunctionDeclarationCore(ref enumerator, false);
-        return new FunctionDeclarationStatementNode(Name, Identifiers, Statements, HasVariableArgments, functionToken.Position);
+        var (Name, Identifiers, Statements, HasVariableArgments, LineDefined, LastLineDefined) = ParseFunctionDeclarationCore(ref enumerator, false);
+        return new FunctionDeclarationStatementNode(Name, Identifiers, Statements, HasVariableArgments, functionToken.Position, LineDefined, LastLineDefined);
     }
 
     LocalFunctionDeclarationStatementNode ParseLocalFunctionDeclarationStatement(ref SyntaxTokenEnumerator enumerator, SyntaxToken functionToken)
     {
-        var (Name, Identifiers, Statements, HasVariableArgments) = ParseFunctionDeclarationCore(ref enumerator, false);
-        return new LocalFunctionDeclarationStatementNode(Name, Identifiers, Statements, HasVariableArgments, functionToken.Position);
+        var (Name, Identifiers, Statements, HasVariableArgments, LineDefined, LastLineDefined) = ParseFunctionDeclarationCore(ref enumerator, false);
+        return new LocalFunctionDeclarationStatementNode(Name, Identifiers, Statements, HasVariableArgments, functionToken.Position, LineDefined, LastLineDefined);
     }
 
-    (ReadOnlyMemory<char> Name, IdentifierNode[] Identifiers, StatementNode[] Statements, bool HasVariableArgments) ParseFunctionDeclarationCore(ref SyntaxTokenEnumerator enumerator, bool isAnonymous)
+    (ReadOnlyMemory<char> Name, IdentifierNode[] Identifiers, StatementNode[] Statements, bool HasVariableArgments, int LineDefined, int LastLineDefined) ParseFunctionDeclarationCore(ref SyntaxTokenEnumerator enumerator, bool isAnonymous)
     {
         ReadOnlyMemory<char> name;
 
@@ -478,7 +482,7 @@ public ref struct Parser
         }
 
         // skip '('
-        CheckCurrentAndSkip(ref enumerator, SyntaxTokenType.LParen, out _);
+        CheckCurrentAndSkip(ref enumerator, SyntaxTokenType.LParen, out var leftParenToken);
         enumerator.SkipEoL();
 
         // parse parameters
@@ -494,16 +498,16 @@ public ref struct Parser
         CheckCurrent(ref enumerator, SyntaxTokenType.RParen);
 
         // parse statements
-        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End);
+        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End, out var endToken);
 
-        return (name, identifiers, statements, hasVarArg);
+        return (name, identifiers, statements, hasVarArg, leftParenToken.Position.Line, endToken.Position.Line);
     }
 
     TableMethodDeclarationStatementNode ParseTableMethodDeclarationStatement(ref SyntaxTokenEnumerator enumerator, SyntaxToken functionToken)
     {
         using var names = new PooledList<IdentifierNode>(32);
         var hasSelfParameter = false;
-
+        SyntaxToken leftParenToken;
         while (true)
         {
             CheckCurrent(ref enumerator, SyntaxTokenType.Identifier);
@@ -517,6 +521,7 @@ public ref struct Parser
                 {
                     LuaParseException.UnexpectedToken(ChunkName, enumerator.Current.Position, enumerator.Current);
                 }
+
                 hasSelfParameter = enumerator.Current.Type is SyntaxTokenType.Colon;
 
                 MoveNextWithValidation(ref enumerator);
@@ -524,6 +529,7 @@ public ref struct Parser
             }
             else if (enumerator.Current.Type is SyntaxTokenType.LParen)
             {
+                leftParenToken = enumerator.Current;
                 // skip '('
                 MoveNextWithValidation(ref enumerator);
                 enumerator.SkipEoL();
@@ -544,9 +550,9 @@ public ref struct Parser
         CheckCurrent(ref enumerator, SyntaxTokenType.RParen);
 
         // parse statements
-        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End);
+        var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End, out var endToken);
 
-        return new TableMethodDeclarationStatementNode(names.AsSpan().ToArray(), identifiers, statements, hasVarArg, hasSelfParameter, functionToken.Position);
+        return new TableMethodDeclarationStatementNode(names.AsSpan().ToArray(), identifiers, statements, hasVarArg, hasSelfParameter, functionToken.Position, leftParenToken.Position.Line, endToken.Position.Line);
     }
 
     bool TryParseExpression(ref SyntaxTokenEnumerator enumerator, OperatorPrecedence precedence, [NotNullWhen(true)] out ExpressionNode? result)
@@ -579,7 +585,7 @@ public ref struct Parser
         // nested table access & function call
     RECURSIVE:
         enumerator.SkipEoL();
-        
+
         var nextType = enumerator.GetNext().Type;
         if (nextType is SyntaxTokenType.LSquare or SyntaxTokenType.Dot or SyntaxTokenType.Colon)
         {
@@ -851,9 +857,9 @@ public ref struct Parser
         // skip 'function' keyword
         CheckCurrentAndSkip(ref enumerator, SyntaxTokenType.Function, out var functionToken);
         enumerator.SkipEoL();
-        
-        var (_, Identifiers, Statements, HasVariableArgments) = ParseFunctionDeclarationCore(ref enumerator, true);
-        return new FunctionDeclarationExpressionNode(Identifiers, Statements, HasVariableArgments, functionToken.Position);
+
+        var (_, Identifiers, Statements, HasVariableArgments, LineDefined, LastLineDefined) = ParseFunctionDeclarationCore(ref enumerator, true);
+        return new FunctionDeclarationExpressionNode(Identifiers, Statements, HasVariableArgments, functionToken.Position, LineDefined, LastLineDefined);
     }
 
     ExpressionNode[] ParseCallFunctionArguments(ref SyntaxTokenEnumerator enumerator)
@@ -946,19 +952,21 @@ public ref struct Parser
         return buffer.AsSpan().ToArray();
     }
 
-    StatementNode[] ParseStatementList(ref SyntaxTokenEnumerator enumerator, SyntaxTokenType endToken)
+    StatementNode[] ParseStatementList(ref SyntaxTokenEnumerator enumerator, SyntaxTokenType endTokenType, out SyntaxToken endToken)
     {
         using var statements = new PooledList<StatementNode>(64);
 
         // parse statements
         while (enumerator.MoveNext())
         {
-            if (enumerator.Current.Type == endToken) break;
+            if (enumerator.Current.Type == endTokenType) break;
             if (enumerator.Current.Type is SyntaxTokenType.EndOfLine or SyntaxTokenType.SemiColon) continue;
 
             var node = ParseStatement(ref enumerator);
             statements.Add(node);
         }
+
+        endToken = enumerator.Current;
 
         return statements.AsSpan().ToArray();
     }

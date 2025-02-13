@@ -1,6 +1,6 @@
 ﻿using System.Runtime.CompilerServices;
 using Lua.Runtime;
-
+using Lua.Internal;
 namespace Lua.Standard;
 
 public class DebugLibrary
@@ -19,7 +19,8 @@ public class DebugLibrary
             new("setmetatable", SetMetatable),
             new("traceback", Traceback),
             new("getregistry", GetRegistry),
-            new("upvaluejoin", UpValueJoin)
+            new("upvaluejoin", UpValueJoin),
+            new("getinfo", GetInfo),
         ];
     }
 
@@ -252,10 +253,10 @@ public class DebugLibrary
 
     public ValueTask<int> Traceback(LuaFunctionExecutionContext context, Memory<LuaValue> buffer, CancellationToken cancellationToken)
     {
-        var thread = (GetLuaThread(context, out var argOffset));
+        var thread = GetLuaThread(context, out var argOffset);
 
         var message = context.GetArgumentOrDefault(argOffset);
-        var level = context.GetArgumentOrDefault<int>(argOffset + 1, 1);
+        var level = context.GetArgumentOrDefault<int>(argOffset + 1, 0);
 
 
         if (message.Type is not (LuaValueType.Nil or LuaValueType.String or LuaValueType.Number))
@@ -312,5 +313,105 @@ public class DebugLibrary
 
         upValues1[n1 - 1] = upValues2[n2 - 1];
         return new(0);
+    }
+
+    public ValueTask<int> GetInfo(LuaFunctionExecutionContext context, Memory<LuaValue> buffer, CancellationToken cancellationToken)
+    {
+        //return new(0);
+        var thread = GetLuaThread(context, out var argOffset);
+        string what = context.GetArgumentOrDefault<string>(argOffset + 1,"flnStu");
+        CallStackFrame? previousFrame = null;
+        CallStackFrame? currentFrame = null;
+        int pc = 0;
+        var arg1 = context.GetArgument(argOffset);
+
+        if (arg1.TryReadFunction(out var functionToInspect))
+        {
+            //what = ">" + what;
+        }
+        else if (arg1.TryReadNumber(out _))
+        {
+            var level = context.GetArgument<int>(argOffset) + 1;
+            
+            var callStack = thread.GetCallStackFrames();
+            if (level <= 0 || level > callStack.Length)
+            {
+                context.ThrowBadArgument(1, "level out of range");
+            }
+            currentFrame = thread.GetCallStackFrames()[^(level)];
+            functionToInspect = currentFrame.Value.Function;
+            previousFrame = level +1 <= callStack.Length?callStack[^(level + 1)]:null;
+            if(level!=0)
+            {
+                pc = thread.GetCallStackFrames()[^(level - 1)].CallerInstructionIndex;
+            }
+            
+        }
+        else
+        {
+            context.ThrowBadArgument(argOffset, "function or level expected");
+        }
+
+        using var debug = LuaDebug.Create(context.State, previousFrame, currentFrame, functionToInspect, pc, what, out var isValid);
+        if (!isValid)
+        {
+            context.ThrowBadArgument(argOffset + 1, "invalid option");
+        }
+
+        var table = new LuaTable(0, 1);
+        if (what.Contains('S'))
+        {
+            table["source"] = debug.Source ?? LuaValue.Nil;
+            table["short_src"] = debug.ShortSource.ToString();
+            table["linedefined"] = debug.LineDefined;
+            table["lastlinedefined"] = debug.LastLineDefined;
+            table["what"] = debug.What?? LuaValue.Nil;;
+        }
+
+        if (what.Contains('l'))
+        {
+            table["currentline"] = debug.CurrentLine;
+        }
+
+        if (what.Contains('u'))
+        {
+            table["nups"] = debug.UpValueCount;
+            table["nparams"] = debug.ParameterCount;
+            table["isvararg"] = debug.IsVarArg;
+        }
+
+        if (what.Contains('n'))
+        {
+            table["name"] = debug.Name?? LuaValue.Nil;;
+            table["namewhat"] = debug.NameWhat?? LuaValue.Nil;;
+        }
+
+        if (what.Contains('t'))
+        {
+            table["istailcall"] = debug.IsTailCall;
+        }
+
+        if (what.Contains('f'))
+        {
+            table["func"] = functionToInspect;
+        }
+
+        if (what.Contains('L'))
+        {
+            var activeLines = new LuaTable(0, 8);
+            if (functionToInspect is Closure closure)
+            {
+                foreach (var pos in closure.Proto.SourcePositions)
+                {
+                    activeLines[pos.Line] = true;
+                }
+            }
+
+            table["activelines"] = activeLines;
+        }
+
+        buffer.Span[0] = table;
+
+        return new(1);
     }
 }

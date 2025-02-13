@@ -43,6 +43,9 @@ public sealed class TableLibrary
         UpValues = [],
         Locals = [new LocalValueInfo(){Name = "a".AsMemory(),StartPc = 0,Index = 0,EndPc = 4}, new LocalValueInfo(){Name = "b".AsMemory(),StartPc = 0,Index = 1,EndPc = 4}],
         MaxStackPosition = 2,
+        HasVariableArguments = false,
+        LineDefined = 0,
+        LastLineDefined = 0,
     };
 
     public ValueTask<int> Concat(LuaFunctionExecutionContext context, Memory<LuaValue> buffer, CancellationToken cancellationToken)

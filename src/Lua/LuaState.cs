@@ -19,10 +19,13 @@ public sealed class LuaState
     readonly LuaTable registry = new();
     readonly UpValue envUpValue;
     bool isRunning;
+    
+    FastStackCore<LuaDebug.LuaDebugBuffer> debugBufferPool;
 
     internal UpValue EnvUpValue => envUpValue;
     internal ref FastStackCore<LuaThread> ThreadStack => ref threadStack;
     internal ref FastListCore<UpValue> OpenUpValues => ref openUpValues;
+    internal ref FastStackCore<LuaDebug.LuaDebugBuffer> DebugBufferPool => ref debugBufferPool;
 
     public LuaTable Environment => environment;
     public LuaTable Registry => registry;

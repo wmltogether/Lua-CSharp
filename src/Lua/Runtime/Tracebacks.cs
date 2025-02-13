@@ -49,7 +49,7 @@ public class Traceback
 
         list.AddRange("stack traceback:\n");
         var intFormatBuffer = (stackalloc char[15]);
-
+        var shortSourceBuffer = (stackalloc char[59]);
         for (var index = stackFrames.Length - 1; index >= 0; index--)
         {
             LuaFunction lastFunc = index > 0 ? stackFrames[index - 1].Function : rootFunc;
@@ -65,13 +65,37 @@ public class Traceback
                 var p = closure.Proto;
                 var root = p.GetRoot();
                 list.AddRange("\t");
-                list.AddRange(root.Name);
+                var len = LuaDebug.WriteShortSource(root.Name, shortSourceBuffer);
+                list.AddRange(shortSourceBuffer[..len]);
                 list.AddRange(":");
                 p.SourcePositions[frame.CallerInstructionIndex].Line.TryFormat(intFormatBuffer, out var charsWritten, provider: CultureInfo.InvariantCulture);
                 list.AddRange(intFormatBuffer[..charsWritten]);
-                list.AddRange(root == p ? ": in '" : ": in function '");
+
+                list.AddRange(": in ");
+                if (root == p)
+                {
+                    list.AddRange("main chunk");
+                    list.AddRange("\n");
+                    continue;
+                }
+
+                var caller = index > 1 ? stackFrames[index - 2].Function : rootFunc;
+                if (index > 0 && caller is Closure callerClosure)
+                {
+                    var t = LuaDebug.GetFuncName(callerClosure.Proto, stackFrames[index - 1].CallerInstructionIndex, out var name);
+                    if (t is not null and not "global")
+                    {
+                        list.AddRange(t);
+                        list.AddRange(" '");
+                        list.AddRange(name);
+                        list.AddRange("'\n");
+                        continue;
+                    }
+                }
+
+                list.AddRange("function '");
                 list.AddRange(p.Name);
-                list.AddRange("'\n");
+                list.AddRange("\n");
             }
         }
 

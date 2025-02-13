@@ -16,4 +16,5 @@ public record struct CallStackFrame
 public enum CallStackFrameFlags
 {
     ReversedLe = 1,
+    TailCall
 }

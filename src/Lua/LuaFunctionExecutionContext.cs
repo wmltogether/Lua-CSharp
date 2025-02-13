@@ -83,6 +83,12 @@ public readonly record struct LuaFunctionExecutionContext
         }
 
         var arg = Arguments[index];
+        
+        if(arg.Type is LuaValueType.Nil)
+        {
+            return defaultValue;
+        }
+        
         if (!arg.TryRead<T>(out var argValue))
         {
             var t = typeof(T);
