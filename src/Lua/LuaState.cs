@@ -95,7 +95,7 @@ public sealed class LuaState
     {
         if (threadStack.Count == 0)
         {
-            return new()
+            return new(this)
             {
                 RootFunc = (Closure)MainThread.GetCallStackFrames()[0].Function,
                 StackFrames = MainThread.GetCallStackFrames()[1..]
@@ -116,7 +116,7 @@ public sealed class LuaState
                 list.Add(frame);
             }
         }
-        return new()
+        return new(this)
         {
             RootFunc = (Closure)MainThread.GetCallStackFrames()[0].Function,
             StackFrames = list.AsSpan().ToArray()

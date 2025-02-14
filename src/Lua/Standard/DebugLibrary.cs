@@ -276,7 +276,7 @@ public class DebugLibrary
         var callStack = thread.GetCallStackFrames();
         var skipCount = Math.Min(level, callStack.Length - 1);
         var frames = callStack[1..^skipCount];
-        buffer.Span[0] = Runtime.Traceback.GetTracebackString((Closure)callStack[0].Function, frames, message);
+        buffer.Span[0] = Runtime.Traceback.GetTracebackString(context.State,(Closure)callStack[0].Function, frames, message);
         thread.PopCallStackFrame();
         return new(1);
     }

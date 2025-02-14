@@ -5,8 +5,9 @@ using Lua.Internal;
 
 namespace Lua.Runtime;
 
-public class Traceback
+public class Traceback(LuaState state)
 {
+    public LuaState State => state;
     public required Closure RootFunc { get; init; }
     public required CallStackFrame[] StackFrames { get; init; }
 
@@ -35,10 +36,10 @@ public class Traceback
 
     public override string ToString()
     {
-        return GetTracebackString(RootFunc, StackFrames, LuaValue.Nil);
+        return GetTracebackString(State,RootFunc, StackFrames, LuaValue.Nil);
     }
 
-    internal static string GetTracebackString(Closure rootFunc, ReadOnlySpan<CallStackFrame> stackFrames, LuaValue message)
+    internal static string GetTracebackString(LuaState state,Closure rootFunc, ReadOnlySpan<CallStackFrame> stackFrames, LuaValue message)
     {
         using var list = new PooledList<char>(64);
         if (message.Type is not LuaValueType.Nil)
@@ -79,6 +80,19 @@ public class Traceback
                     continue;
                 }
 
+                foreach (var pair in state.Environment.Dictionary)
+                {
+                    if (pair.Key.TryReadString(out var name) 
+                        && pair.Value.TryReadFunction(out var result) && 
+                        result == closure)
+                    {
+                        list.AddRange("function '");
+                        list.AddRange(name);
+                        list.AddRange("'\n");
+                        goto Next;
+                    }
+                }
+
                 var caller = index > 1 ? stackFrames[index - 2].Function : rootFunc;
                 if (index > 0 && caller is Closure callerClosure)
                 {
@@ -103,21 +117,15 @@ public class Traceback
                     }
                 }
 
-                if (p.Name != "")
-                {
-                    list.AddRange("function '");
-                    list.AddRange(p.Name);
-                    list.AddRange("'\n");
-                }
-                else
-                {
-                    list.AddRange("function <");
-                    list.AddRange(shortSourceBuffer[..len]);
-                    list.AddRange(":");
-                    p.LineDefined.TryFormat(intFormatBuffer, out charsWritten, provider: CultureInfo.InvariantCulture);
-                    list.AddRange(intFormatBuffer[..charsWritten]);
-                    list.AddRange(">\n");
-                }
+                
+                list.AddRange("function <");
+                list.AddRange(shortSourceBuffer[..len]);
+                list.AddRange(":");
+                p.LineDefined.TryFormat(intFormatBuffer, out charsWritten, provider: CultureInfo.InvariantCulture);
+                list.AddRange(intFormatBuffer[..charsWritten]);
+                list.AddRange(">\n");
+                
+                Next: ;
             }
         }
 
