@@ -18,8 +18,11 @@ public class DebugLibrary
             new("setupvalue", SetUpValue),
             new("getmetatable", GetMetatable),
             new("setmetatable", SetMetatable),
+            new("getuservalue", GetUserValue),
+            new("setuservalue", SetUserValue),
             new("traceback", Traceback),
             new("getregistry", GetRegistry),
+            new("upvalueid", UpValueId),
             new("upvaluejoin", UpValueJoin),
             new("getinfo", GetInfo),
         ];
@@ -252,6 +255,47 @@ public class DebugLibrary
         return new(1);
     }
 
+    public ValueTask<int> GetUserValue(LuaFunctionExecutionContext context, Memory<LuaValue> buffer, CancellationToken cancellationToken)
+    {
+        if (!context.GetArgumentOrDefault(0).TryRead<ILuaUserData>(out var iUserData))
+        {
+            buffer.Span[0] = LuaValue.Nil;
+            return new(1);
+        }
+
+        var index = 1; // context.GetArgument<int>(1); //for lua 5.4
+        var userValues = iUserData.UserValues;
+        if (index > userValues.Length
+            //index < 1 ||  // for lua 5.4
+           )
+        {
+            buffer.Span[0] = LuaValue.Nil;
+            return new(1);
+        }
+
+        buffer.Span[0] = userValues[index - 1];
+        return new(1);
+    }
+
+    public ValueTask<int> SetUserValue(LuaFunctionExecutionContext context, Memory<LuaValue> buffer, CancellationToken cancellationToken)
+    {
+        var iUserData = context.GetArgument<ILuaUserData>(0);
+        var value = context.GetArgument(1);
+        var index = 1; // context.GetArgument<int>(2);// for lua 5.4
+        var userValues = iUserData.UserValues;
+        if (index > userValues.Length
+            //|| index < 1 // for lua 5.4
+           )
+        {
+            buffer.Span[0] = LuaValue.Nil;
+            return new(1);
+        }
+
+        userValues[index - 1] = value;
+        buffer.Span[0] = new LuaValue(iUserData);
+        return new(1);
+    }
+
     public ValueTask<int> Traceback(LuaFunctionExecutionContext context, Memory<LuaValue> buffer, CancellationToken cancellationToken)
     {
         var thread = GetLuaThread(context, out var argOffset);
@@ -270,13 +314,13 @@ public class DebugLibrary
             buffer.Span[0] = LuaValue.Nil;
             return new(1);
         }
-        
-        var currentFrame =thread.GetCallStackFrames().Length>0? thread.GetCallStackFrames()[^1]:default;
+
+        var currentFrame = thread.GetCallStackFrames().Length > 0 ? thread.GetCallStackFrames()[^1] : default;
         thread.PushCallStackFrame(currentFrame);
         var callStack = thread.GetCallStackFrames();
         var skipCount = Math.Min(level, callStack.Length - 1);
         var frames = callStack[1..^skipCount];
-        buffer.Span[0] = Runtime.Traceback.GetTracebackString(context.State,(Closure)callStack[0].Function, frames, message);
+        buffer.Span[0] = Runtime.Traceback.GetTracebackString(context.State, (Closure)callStack[0].Function, frames, message);
         thread.PopCallStackFrame();
         return new(1);
     }
@@ -284,6 +328,28 @@ public class DebugLibrary
     public ValueTask<int> GetRegistry(LuaFunctionExecutionContext context, Memory<LuaValue> buffer, CancellationToken cancellationToken)
     {
         buffer.Span[0] = context.State.Registry;
+        return new(1);
+    }
+
+    public ValueTask<int> UpValueId(LuaFunctionExecutionContext context, Memory<LuaValue> buffer, CancellationToken cancellationToken)
+    {
+        var n1 = context.GetArgument<int>(1);
+        var f1 = context.GetArgument<LuaFunction>(0);
+
+        if (f1 is not Closure closure)
+        {
+            buffer.Span[0] = LuaValue.Nil;
+            return new(1);
+        }
+
+        var upValues = closure.GetUpValuesSpan();
+        if (n1 <= 0 || n1 > upValues.Length)
+        {
+            buffer.Span[0] = LuaValue.Nil;
+            return new(1);
+        }
+
+        buffer.Span[0] = new LuaValue(upValues[n1 - 1]);
         return new(1);
     }
 

@@ -65,6 +65,10 @@ public readonly record struct LuaFunctionExecutionContext
             {
                 LuaRuntimeException.BadArgument(State.GetTraceback(), index + 1, Thread.GetCurrentFrame().Function.Name, type.ToString(), arg.Type.ToString());
             }
+            else if(arg.Type is LuaValueType.UserData or LuaValueType.LightUserData)
+            {
+                LuaRuntimeException.BadArgument(State.GetTraceback(), index + 1, Thread.GetCurrentFrame().Function.Name, t.Name, arg.UnsafeRead<object>()?.GetType().ToString()??"userdata: 0");
+            }
             else
             {
                 LuaRuntimeException.BadArgument(State.GetTraceback(), index + 1, Thread.GetCurrentFrame().Function.Name, t.Name, arg.Type.ToString());
@@ -99,6 +103,10 @@ public readonly record struct LuaFunctionExecutionContext
             else if (LuaValue.TryGetLuaValueType(t, out var type))
             {
                 LuaRuntimeException.BadArgument(State.GetTraceback(), index + 1, Thread.GetCurrentFrame().Function.Name, type.ToString(), arg.Type.ToString());
+            }
+            else if(arg.Type is LuaValueType.UserData or LuaValueType.LightUserData)
+            {
+                LuaRuntimeException.BadArgument(State.GetTraceback(), index + 1, Thread.GetCurrentFrame().Function.Name, t.Name, arg.UnsafeRead<object>()?.GetType().ToString()??"userdata: 0");
             }
             else
             {
