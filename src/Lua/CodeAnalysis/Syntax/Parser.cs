@@ -33,8 +33,19 @@ public ref struct Parser
             var node = ParseStatement(ref enumerator);
             root.Add(node);
         }
+        var tokensSpan = tokens.AsSpan();
+        var lastToken = tokensSpan[0];
+        for (int i = tokensSpan.Length-1; 0<i;i--)
+        {
+            var t = tokensSpan[i];
+            if (t.Type is not SyntaxTokenType.EndOfLine)
+            {
+                lastToken = t;
+                break;
+            }
+        }
 
-        var tree = new LuaSyntaxTree(root.AsSpan().ToArray());
+        var tree = new LuaSyntaxTree(root.AsSpan().ToArray(),lastToken.Position);
         Dispose();
 
         return tree;
@@ -251,6 +262,7 @@ public ref struct Parser
 
         // skip 'then' keyword
         CheckCurrent(ref enumerator, SyntaxTokenType.Then);
+        var thenToken = enumerator.Current;
 
         using var builder = new PooledList<StatementNode>(64);
         using var elseIfBuilder = new PooledList<IfStatementNode.ConditionAndThenNodes>(64);
@@ -283,6 +295,7 @@ public ref struct Parser
                     case 0:
                         ifNodes = new()
                         {
+                            Position = thenToken.Position,
                             ConditionNode = condition,
                             ThenNodes = builder.AsSpan().ToArray(),
                         };
@@ -291,6 +304,7 @@ public ref struct Parser
                     case 1:
                         elseIfBuilder.Add(new()
                         {
+                            Position = thenToken.Position,
                             ConditionNode = condition,
                             ThenNodes = builder.AsSpan().ToArray(),
                         });
@@ -314,7 +328,7 @@ public ref struct Parser
 
                     // check 'then' keyword
                     CheckCurrent(ref enumerator, SyntaxTokenType.Then);
-
+                    thenToken = enumerator.Current;
                     // set elseif state
                     state = 1;
 
@@ -453,17 +467,17 @@ public ref struct Parser
 
     FunctionDeclarationStatementNode ParseFunctionDeclarationStatement(ref SyntaxTokenEnumerator enumerator, SyntaxToken functionToken)
     {
-        var (Name, Identifiers, Statements, HasVariableArgments, LineDefined, LastLineDefined) = ParseFunctionDeclarationCore(ref enumerator, false);
-        return new FunctionDeclarationStatementNode(Name, Identifiers, Statements, HasVariableArgments, functionToken.Position, LineDefined, LastLineDefined);
+        var (Name, Identifiers, Statements, HasVariableArgments, LineDefined, EndPosition) = ParseFunctionDeclarationCore(ref enumerator, false);
+        return new FunctionDeclarationStatementNode(Name, Identifiers, Statements, HasVariableArgments, functionToken.Position, LineDefined, EndPosition);
     }
 
     LocalFunctionDeclarationStatementNode ParseLocalFunctionDeclarationStatement(ref SyntaxTokenEnumerator enumerator, SyntaxToken functionToken)
     {
-        var (Name, Identifiers, Statements, HasVariableArgments, LineDefined, LastLineDefined) = ParseFunctionDeclarationCore(ref enumerator, false);
-        return new LocalFunctionDeclarationStatementNode(Name, Identifiers, Statements, HasVariableArgments, functionToken.Position, LineDefined, LastLineDefined);
+        var (Name, Identifiers, Statements, HasVariableArgments, LineDefined, EndPosition) = ParseFunctionDeclarationCore(ref enumerator, false);
+        return new LocalFunctionDeclarationStatementNode(Name, Identifiers, Statements, HasVariableArgments, functionToken.Position, LineDefined, EndPosition);
     }
 
-    (ReadOnlyMemory<char> Name, IdentifierNode[] Identifiers, StatementNode[] Statements, bool HasVariableArgments, int LineDefined, int LastLineDefined) ParseFunctionDeclarationCore(ref SyntaxTokenEnumerator enumerator, bool isAnonymous)
+    (ReadOnlyMemory<char> Name, IdentifierNode[] Identifiers, StatementNode[] Statements, bool HasVariableArgments, int LineDefined, SourcePosition EndPosition) ParseFunctionDeclarationCore(ref SyntaxTokenEnumerator enumerator, bool isAnonymous)
     {
         ReadOnlyMemory<char> name;
 
@@ -500,7 +514,7 @@ public ref struct Parser
         // parse statements
         var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End, out var endToken);
 
-        return (name, identifiers, statements, hasVarArg, leftParenToken.Position.Line, endToken.Position.Line);
+        return (name, identifiers, statements, hasVarArg, leftParenToken.Position.Line, endToken.Position);
     }
 
     TableMethodDeclarationStatementNode ParseTableMethodDeclarationStatement(ref SyntaxTokenEnumerator enumerator, SyntaxToken functionToken)
@@ -552,7 +566,7 @@ public ref struct Parser
         // parse statements
         var statements = ParseStatementList(ref enumerator, SyntaxTokenType.End, out var endToken);
 
-        return new TableMethodDeclarationStatementNode(names.AsSpan().ToArray(), identifiers, statements, hasVarArg, hasSelfParameter, functionToken.Position, leftParenToken.Position.Line, endToken.Position.Line);
+        return new TableMethodDeclarationStatementNode(names.AsSpan().ToArray(), identifiers, statements, hasVarArg, hasSelfParameter, functionToken.Position, leftParenToken.Position.Line, endToken.Position);
     }
 
     bool TryParseExpression(ref SyntaxTokenEnumerator enumerator, OperatorPrecedence precedence, [NotNullWhen(true)] out ExpressionNode? result)
