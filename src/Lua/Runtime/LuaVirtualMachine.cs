@@ -308,7 +308,7 @@ public static partial class LuaVirtualMachine
             {
                 var instructionRef = Unsafe.Add(ref instructionsHead, ++context.Pc);
                 context.Instruction = instructionRef;
-                if (lineAndCountHookMask.Value!=0 && (context.Pc != context.LastHookPc))
+                if (lineAndCountHookMask.Value != 0 && (context.Pc != context.LastHookPc))
                 {
                     goto LineHook;
                 }
@@ -1052,10 +1052,10 @@ public static partial class LuaVirtualMachine
         var newFrame = func.CreateNewFrame(ref context, newBase, variableArgumentCount);
 
         thread.PushCallStackFrame(newFrame);
-        if (thread.CallOrReturnHookMask.Value!=0 && !context.Thread.IsInHook)
+        if (thread.CallOrReturnHookMask.Value != 0 && !context.Thread.IsInHook)
         {
             context.PostOperation = PostOperationType.Call;
-            ExecuteCallHook(ref context, argumentCount);
+            context.Task=ExecuteCallHook(ref context, newFrame,argumentCount);
             doRestart = false;
             return false;
         }
@@ -1187,10 +1187,10 @@ public static partial class LuaVirtualMachine
         newFrame.CallerInstructionIndex = lastPc;
         thread.PushCallStackFrame(newFrame);
 
-        if (thread.CallOrReturnHookMask.Value!=0 && !context.Thread.IsInHook)
+        if (thread.CallOrReturnHookMask.Value != 0 && !context.Thread.IsInHook)
         {
             context.PostOperation = PostOperationType.TailCall;
-            ExecuteCallHook(ref context, argumentCount, true);
+           context.Task=ExecuteCallHook(ref context, newFrame,argumentCount,true);
             doRestart = false;
             return false;
         }
@@ -1390,6 +1390,14 @@ public static partial class LuaVirtualMachine
         var newFrame = indexTable.CreateNewFrame(ref context, stack.Count - 2);
 
         context.Thread.PushCallStackFrame(newFrame);
+        if (context.Thread.CallOrReturnHookMask.Value != 0 && !context.Thread.IsInHook)
+        {
+            context.PostOperation = context.Instruction.OpCode == OpCode.GetTable ? PostOperationType.SetResult : PostOperationType.Self;
+           context.Task=ExecuteCallHook(ref context, newFrame,2);
+            doRestart = false;
+            result = default;
+            return false;
+        }
 
         if (indexTable is Closure)
         {
@@ -1483,6 +1491,13 @@ public static partial class LuaVirtualMachine
         var newFrame = newIndexFunction.CreateNewFrame(ref context, stack.Count - 3);
 
         context.Thread.PushCallStackFrame(newFrame);
+        if (context.Thread.CallOrReturnHookMask.Value != 0 && !context.Thread.IsInHook)
+        {
+            context.PostOperation = PostOperationType.Nop;
+             context.Task=ExecuteCallHook(ref context, newFrame,3);
+            doRestart = false;
+            return false;
+        }
 
         if (newIndexFunction is Closure)
         {
@@ -1494,6 +1509,7 @@ public static partial class LuaVirtualMachine
         var task = newIndexFunction.Invoke(ref context, newFrame, 3);
         if (!task.IsCompleted)
         {
+            context.PostOperation = PostOperationType.Nop;
             context.Task = task;
             return false;
         }
@@ -1529,6 +1545,13 @@ public static partial class LuaVirtualMachine
             var newFrame = func.CreateNewFrame(ref context, stack.Count - 2);
 
             context.Thread.PushCallStackFrame(newFrame);
+            if (context.Thread.CallOrReturnHookMask.Value != 0 && !context.Thread.IsInHook)
+            {
+                context.PostOperation = PostOperationType.SetResult;
+                context.Task=ExecuteCallHook(ref context, newFrame,2);
+                doRestart = false;
+                return false;
+            }
 
             if (func is Closure)
             {
@@ -1576,6 +1599,13 @@ public static partial class LuaVirtualMachine
             var newFrame = func.CreateNewFrame(ref context, stack.Count - 1);
 
             context.Thread.PushCallStackFrame(newFrame);
+            if (context.Thread.CallOrReturnHookMask.Value != 0 && !context.Thread.IsInHook)
+            {
+                context.PostOperation = PostOperationType.SetResult;
+              context.Task=ExecuteCallHook(ref context, newFrame,1);
+                doRestart = false;
+                return false;
+            }
 
             if (func is Closure)
             {
@@ -1589,6 +1619,7 @@ public static partial class LuaVirtualMachine
 
             if (!task.IsCompleted)
             {
+                context.PostOperation = PostOperationType.SetResult;
                 context.Task = task;
                 return false;
             }
@@ -1633,7 +1664,13 @@ public static partial class LuaVirtualMachine
             var newFrame = func.CreateNewFrame(ref context, stack.Count - 2);
             if (reverseLe) newFrame.Flags |= CallStackFrameFlags.ReversedLe;
             context.Thread.PushCallStackFrame(newFrame);
-
+            if (context.Thread.CallOrReturnHookMask.Value != 0 && !context.Thread.IsInHook)
+            {
+                context.PostOperation = PostOperationType.Compare;
+                context.Task=ExecuteCallHook(ref context, newFrame,2);
+                doRestart = false;
+                return false;
+            }
             if (func is Closure)
             {
                 context.Push(newFrame);
