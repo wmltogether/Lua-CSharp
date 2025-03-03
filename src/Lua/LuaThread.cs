@@ -19,39 +19,20 @@ public abstract class LuaThread
 
     internal bool IsLineHookEnabled
     {
-        get => (LineAndCountHookMask & 1) != 0;
-        set
-        {
-            if (value)
-            {
-                LineAndCountHookMask |= 1;
-            }
-            else
-            {
-                LineAndCountHookMask &= 0b1111_1110;
-            }
-        }
+        get => LineAndCountHookMask.Flag0;
+        set => LineAndCountHookMask.Flag0 = value;
     }
 
     internal bool IsCountHookEnabled
     {
-        get => (LineAndCountHookMask & 2) != 0;
-        set
-        {
-            if (value)
-            {
-                LineAndCountHookMask |= 2;
-            }
-            else
-            {
-                LineAndCountHookMask &= 0b1111_1101;
-            }
-        }
+        get => LineAndCountHookMask.Flag1;
+        set => LineAndCountHookMask.Flag1 = value;
     }
-    internal bool IsCallHookEnabled;
-    internal byte LineAndCountHookMask;
-    internal bool IsReturnHookEnabled;
-    internal bool CallOrReturnHookEnabled => IsCallHookEnabled || IsReturnHookEnabled;
+   
+    internal BitFlags2 LineAndCountHookMask;
+     internal bool IsCallHookEnabled { get => CallOrReturnHookMask.Flag0; set => CallOrReturnHookMask.Flag0 = value; }
+    internal bool IsReturnHookEnabled { get => CallOrReturnHookMask.Flag1; set => CallOrReturnHookMask.Flag1 = value; }
+    internal BitFlags2 CallOrReturnHookMask;
     internal bool IsInHook;
     internal int HookCount;
     internal int BaseHookCount;

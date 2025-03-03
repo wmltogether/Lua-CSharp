@@ -285,7 +285,7 @@ public static partial class LuaVirtualMachine
             var stack = context.Stack;
             stack.EnsureCapacity(frameBase + context.Chunk.MaxStackPosition);
             ref var constHead = ref MemoryMarshalEx.UnsafeElementAt(context.Chunk.Constants, 0);
-            ref byte lineAndCountHookMask = ref context.Thread.LineAndCountHookMask;
+            ref var lineAndCountHookMask = ref context.Thread.LineAndCountHookMask;
             goto Loop;
         LineHook:
 
@@ -308,7 +308,7 @@ public static partial class LuaVirtualMachine
             {
                 var instructionRef = Unsafe.Add(ref instructionsHead, ++context.Pc);
                 context.Instruction = instructionRef;
-                if (lineAndCountHookMask != 0 && (context.Pc != context.LastHookPc))
+                if (lineAndCountHookMask.Value!=0 && (context.Pc != context.LastHookPc))
                 {
                     goto LineHook;
                 }
@@ -1052,7 +1052,7 @@ public static partial class LuaVirtualMachine
         var newFrame = func.CreateNewFrame(ref context, newBase, variableArgumentCount);
 
         thread.PushCallStackFrame(newFrame);
-        if (thread.CallOrReturnHookEnabled && !context.Thread.IsInHook)
+        if (thread.CallOrReturnHookMask.Value!=0 && !context.Thread.IsInHook)
         {
             context.PostOperation = PostOperationType.Call;
             ExecuteCallHook(ref context, argumentCount);
@@ -1187,7 +1187,7 @@ public static partial class LuaVirtualMachine
         newFrame.CallerInstructionIndex = lastPc;
         thread.PushCallStackFrame(newFrame);
 
-        if (thread.CallOrReturnHookEnabled && !context.Thread.IsInHook)
+        if (thread.CallOrReturnHookMask.Value!=0 && !context.Thread.IsInHook)
         {
             context.PostOperation = PostOperationType.TailCall;
             ExecuteCallHook(ref context, argumentCount, true);
