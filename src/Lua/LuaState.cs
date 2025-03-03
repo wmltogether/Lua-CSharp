@@ -19,7 +19,7 @@ public sealed class LuaState
     readonly LuaTable registry = new();
     readonly UpValue envUpValue;
     bool isRunning;
-    
+
     FastStackCore<LuaDebug.LuaDebugBuffer> debugBufferPool;
 
     internal UpValue EnvUpValue => envUpValue;
@@ -108,6 +108,7 @@ public sealed class LuaState
         {
             list.Add(frame);
         }
+
         foreach (var thread in threadStack.AsSpan())
         {
             if (thread.CallStack.Count == 0) continue;
@@ -116,9 +117,34 @@ public sealed class LuaState
                 list.Add(frame);
             }
         }
+
         return new(this)
         {
             RootFunc = (Closure)MainThread.GetCallStackFrames()[0].Function,
+            StackFrames = list.AsSpan().ToArray()
+        };
+    }
+
+    internal Traceback GetTraceback(LuaThread thread)
+    {
+        using var list = new PooledList<CallStackFrame>(8);
+        foreach (var frame in thread.GetCallStackFrames()[1..])
+        {
+            list.Add(frame);
+        }
+        Closure rootFunc;
+        if (thread.GetCallStackFrames()[0].Function is Closure closure)
+        {
+            rootFunc = closure;
+        }
+        else
+        {
+            rootFunc = (Closure)MainThread.GetCallStackFrames()[0].Function;
+        }
+
+        return new(this)
+        {
+            RootFunc = rootFunc,
             StackFrames = list.AsSpan().ToArray()
         };
     }

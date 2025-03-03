@@ -35,6 +35,7 @@ public static partial class LuaVirtualMachine
         public int ResultCount;
         public int TaskResult;
         public ValueTask<int> Task;
+        public int LastHookPc = -1;
         public bool IsTopLevel => BaseCallStackCount == Thread.CallStack.Count;
 
         readonly int BaseCallStackCount = thread.CallStack.Count;
@@ -60,6 +61,7 @@ public static partial class LuaVirtualMachine
             if (frames.Length == BaseCallStackCount) return false;
             ref readonly var frame = ref frames[^1];
             Pc = frame.CallerInstructionIndex;
+            Thread.LastPc = Pc;
             ref readonly var lastFrame = ref frames[^2];
             Closure = Unsafe.As<Closure>(lastFrame.Function);
             var callInstruction = Chunk.Instructions[Pc];
@@ -283,10 +285,35 @@ public static partial class LuaVirtualMachine
             var stack = context.Stack;
             stack.EnsureCapacity(frameBase + context.Chunk.MaxStackPosition);
             ref var constHead = ref MemoryMarshalEx.UnsafeElementAt(context.Chunk.Constants, 0);
+            ref byte lineAndCountHookMask = ref context.Thread.LineAndCountHookMask;
+            goto Loop;
+        LineHook:
+
+            {
+                context.LastHookPc = context.Pc;
+                if (!context.Thread.IsInHook && ExecutePerInstructionHook(ref context))
+                {
+                    {
+                        context.PostOperation = PostOperationType.Nop;
+                        return true;
+                    }
+                }
+
+                --context.Pc;
+            }
+
+
+        Loop:
             while (true)
             {
                 var instructionRef = Unsafe.Add(ref instructionsHead, ++context.Pc);
                 context.Instruction = instructionRef;
+                if (lineAndCountHookMask != 0 && (context.Pc != context.LastHookPc))
+                {
+                    goto LineHook;
+                }
+
+                context.LastHookPc = -1;
                 switch (instructionRef.OpCode)
                 {
                     case OpCode.Move:
@@ -924,16 +951,17 @@ public static partial class LuaVirtualMachine
         }
         catch (Exception e)
         {
-            context.PopOnTopCallStackFrames();
             context.State.CloseUpValues(context.Thread, context.FrameBase);
             LuaValueArrayPool.Return1024(context.ResultsBuffer, true);
             if (e is not LuaRuntimeException)
             {
-                var newException = new LuaRuntimeException(GetTracebacks(ref context), e);
+                var newException = new LuaRuntimeException(context.State.GetTraceback(), e);
+                context.PopOnTopCallStackFrames();
                 context = default;
                 throw newException;
             }
 
+            context.PopOnTopCallStackFrames();
             throw;
         }
     }
@@ -1024,7 +1052,14 @@ public static partial class LuaVirtualMachine
         var newFrame = func.CreateNewFrame(ref context, newBase, variableArgumentCount);
 
         thread.PushCallStackFrame(newFrame);
-        
+        if (thread.CallOrReturnHookEnabled && !context.Thread.IsInHook)
+        {
+            context.PostOperation = PostOperationType.Call;
+            ExecuteCallHook(ref context, argumentCount);
+            doRestart = false;
+            return false;
+        }
+
         if (func is Closure)
         {
             context.Push(newFrame);
@@ -1151,6 +1186,14 @@ public static partial class LuaVirtualMachine
         newFrame.Flags |= CallStackFrameFlags.TailCall;
         newFrame.CallerInstructionIndex = lastPc;
         thread.PushCallStackFrame(newFrame);
+
+        if (thread.CallOrReturnHookEnabled && !context.Thread.IsInHook)
+        {
+            context.PostOperation = PostOperationType.TailCall;
+            ExecuteCallHook(ref context, argumentCount, true);
+            doRestart = false;
+            return false;
+        }
 
         context.Push(newFrame);
         if (func is Closure)

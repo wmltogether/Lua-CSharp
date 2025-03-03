@@ -44,6 +44,15 @@ public class Traceback(LuaState state)
     {
         return GetTracebackString(State, RootFunc, StackFrames, LuaValue.Nil);
     }
+    
+    public string ToString(int skipFrames)
+    {
+        if(skipFrames < 0 || skipFrames >= StackFrames.Length)
+        {
+            return "stack traceback:\n";
+        }
+        return GetTracebackString(State, RootFunc, StackFrames[..^skipFrames], LuaValue.Nil);
+    }
 
     internal static string GetTracebackString(LuaState state, Closure rootFunc, ReadOnlySpan<CallStackFrame> stackFrames, LuaValue message, bool skipFirstCsharpCall = false)
     {

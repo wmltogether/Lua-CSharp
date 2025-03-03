@@ -61,7 +61,11 @@ public sealed class CoroutineLibrary
 
         buffer.Span[0] = new CsClosure("wrap", [thread],static async (context, buffer, cancellationToken) =>
         {
-            var thread = context.GetCsClosure()!.UpValues[0].Read<LuaCoroutine>();
+            var thread = context.GetCsClosure()!.UpValues[0].Read<LuaThread>();
+            if (thread is not LuaCoroutine coroutine)
+            {
+                return await thread.ResumeAsync(context, buffer, cancellationToken);
+            }
             var stack = context.Thread.Stack;
             var frameBase = stack.Count;
 
@@ -71,7 +75,7 @@ public sealed class CoroutineLibrary
             {
                 Base = frameBase,
                 VariableArgumentCount = 0,
-                Function = thread.Function,
+                Function = coroutine.Function,
             });
             try
             {
