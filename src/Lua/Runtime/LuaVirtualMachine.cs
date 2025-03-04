@@ -265,7 +265,7 @@ public static partial class LuaVirtualMachine
     internal static ValueTask<int> ExecuteClosureAsync(LuaState luaState, Memory<LuaValue> buffer, CancellationToken cancellationToken)
     {
         var thread = luaState.CurrentThread;
-        ref readonly var frame = ref thread.GetCallStackFrames()[^1];
+        ref readonly var frame = ref thread.GetCurrentFrame();
         var resultBuffer = LuaValueArrayPool.Rent1024();
 
         var context = new VirtualMachineExecutionContext(luaState, thread.Stack, resultBuffer, buffer, thread, in frame,

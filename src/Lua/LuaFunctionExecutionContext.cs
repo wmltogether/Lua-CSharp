@@ -118,8 +118,7 @@ public readonly record struct LuaFunctionExecutionContext
 
     public CsClosure? GetCsClosure()
     {
-        var stack = Thread.CallStack[^1];
-        return stack.Function as CsClosure;
+        return Thread.GetCurrentFrame().Function as CsClosure;
     }
 
     internal void ThrowBadArgument(int index, string message)

@@ -28,10 +28,21 @@ public abstract class LuaThread
         get => LineAndCountHookMask.Flag1;
         set => LineAndCountHookMask.Flag1 = value;
     }
-   
+
     internal BitFlags2 LineAndCountHookMask;
-     internal bool IsCallHookEnabled { get => CallOrReturnHookMask.Flag0; set => CallOrReturnHookMask.Flag0 = value; }
-    internal bool IsReturnHookEnabled { get => CallOrReturnHookMask.Flag1; set => CallOrReturnHookMask.Flag1 = value; }
+
+    internal bool IsCallHookEnabled
+    {
+        get => CallOrReturnHookMask.Flag0;
+        set => CallOrReturnHookMask.Flag0 = value;
+    }
+
+    internal bool IsReturnHookEnabled
+    {
+        get => CallOrReturnHookMask.Flag1;
+        set => CallOrReturnHookMask.Flag1 = value;
+    }
+
     internal BitFlags2 CallOrReturnHookMask;
     internal bool IsInHook;
     internal int HookCount;
@@ -39,9 +50,9 @@ public abstract class LuaThread
     internal int LastPc;
     internal LuaFunction? Hook { get; set; }
 
-    public CallStackFrame GetCurrentFrame()
+    public ref readonly CallStackFrame GetCurrentFrame()
     {
-        return callStack.Peek();
+        return ref callStack.PeekRef();
     }
 
     public ReadOnlySpan<LuaValue> GetStackValues()
