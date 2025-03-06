@@ -6,7 +6,6 @@ public static class LuaFunctionExtensions
 {
     public static async ValueTask<LuaValue[]> InvokeAsync(this LuaFunction function, LuaState state, LuaValue[] arguments, CancellationToken cancellationToken = default)
     {
-        using var buffer = new PooledArray<LuaValue>(1024);
 
         var thread = state.CurrentThread;
         var frameBase = thread.Stack.Count;
@@ -22,8 +21,10 @@ public static class LuaFunctionExtensions
             Thread = thread,
             ArgumentCount = arguments.Length,
             FrameBase = frameBase,
-        }, buffer.AsMemory(), cancellationToken);
-
-        return buffer.AsSpan()[0..resultCount].ToArray();
+            ReturnFrameBase = frameBase,
+        },  cancellationToken);
+        var r =thread.Stack.GetBuffer()[frameBase..(frameBase + resultCount)].ToArray();
+        thread.Stack.PopUntil(frameBase);
+        return r;
     }
 }

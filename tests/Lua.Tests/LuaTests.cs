@@ -56,7 +56,7 @@ public class LuaTests
     }
 
     [Test]
-    public async Task Test_Debug_Mini()
+    public async Task Test_Debug()
     {
         await state.DoFileAsync(FileHelper.GetAbsolutePath("tests-lua/db.lua"));
     }

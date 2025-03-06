@@ -65,6 +65,21 @@ assert(a.x == 'x')
 ";
         await state.DoStringAsync(source);
     }
+    
+    [Test]
+    public async Task Test_Metamethod_Index_Self()
+    {
+        var source = @"
+metatable = {
+    __index = function(a,b) return function () return a[1]..b; end,1 end
+}
+
+local a = {x=1}
+setmetatable(a, metatable)
+print(a:some()
+";
+        await state.DoStringAsync(source);
+    }
 
     [Test]
     public async Task Test_Metamethod_NewIndex()
@@ -96,6 +111,7 @@ assert(metatable.__newindex.x == 2)
 
                      debug.sethook(function () table.insert(t,debug.traceback()) end,"c")
                      a =a+a
+                     debug.sethook()
                      return t
                      """;
         var r = await state.DoStringAsync(source);
