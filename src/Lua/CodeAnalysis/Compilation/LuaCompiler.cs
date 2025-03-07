@@ -144,7 +144,13 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
                 a = context.StackTopPosition;
             }
 
-            context.PushInstruction(Instruction.Test(a, (byte)(node.OperatorType is BinaryOperator.And ? 0 : 1)), node.Position);
+            context.PushInstruction(Instruction.Test(a, 0), node.Position);
+            if (node.OperatorType is BinaryOperator.Or)
+            {
+                context.PushInstruction(Instruction.Jmp(0, 2), node.Position);
+                context.PushInstruction(Instruction.Move(r, a), node.Position);
+            }
+
             var testJmpIndex = context.Function.Instructions.Length;
             context.PushInstruction(Instruction.Jmp(0, 0), node.Position);
 
@@ -469,6 +475,7 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
                 });
             }
         }
+
         return true;
     }
 
@@ -1102,6 +1109,7 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
                 {
                     value = stringLiteral.Text.ToString();
                 }
+
                 return true;
             case UnaryExpressionNode unaryExpression:
                 if (TryGetConstant(unaryExpression.Node, context, out var unaryNodeValue))
@@ -1114,6 +1122,7 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
                                 value = -d1;
                                 return true;
                             }
+
                             break;
                         case UnaryOperator.Not:
                             if (unaryNodeValue.TryRead<bool>(out var b))
@@ -1121,9 +1130,11 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
                                 value = !b;
                                 return true;
                             }
+
                             break;
                     }
                 }
+
                 break;
             case BinaryExpressionNode binaryExpression:
                 if (TryGetConstant(binaryExpression.LeftNode, context, out var leftValue) &&
@@ -1169,6 +1180,7 @@ public sealed class LuaCompiler : ISyntaxNodeVisitor<ScopeCompilationContext, bo
                             break;
                     }
                 }
+
                 break;
         }
 
