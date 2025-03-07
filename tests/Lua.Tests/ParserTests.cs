@@ -25,5 +25,24 @@ end";
             Assert.That(actual, Is.TypeOf<IfStatementNode>());
             Assert.That(actual.ToString(), Is.EqualTo(expected.ToString()));
         }
+        
+        [Test]
+        public void Test_MultiLine_ShortString()
+        {
+            var source = 
+"""
+print "Hello,\
+World!"
+""";
+            var actual = LuaSyntaxTree.Parse(source).Nodes[0]; 
+             Assert.That(actual, Is.TypeOf<CallFunctionStatementNode>());
+             var literal =((StringLiteralNode)((CallFunctionStatementNode)actual).Expression.ArgumentNodes[0]).Text.ToString();
+             Assert.That(literal,  Is.EqualTo(
+                 """
+                 Hello,\
+                 World!
+                 """
+                 ));
+        }
     }
 }

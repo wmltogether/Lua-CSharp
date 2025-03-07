@@ -38,11 +38,6 @@ internal static class StringHelper
                         break;
                     case '\r':
                         builder.Append('\r');
-                        // check CRLF
-                        if (i + 1 < literal.Length && literal[i + 1] is '\n')
-                        {
-                            i++;
-                        }
                         break;
                     case 'a':
                         builder.Append('\a');
@@ -306,6 +301,7 @@ internal static class StringHelper
                             builder.Append(c);
                             break;
                     }
+
                     isEscapeSequence = false;
                 }
             }
@@ -358,7 +354,7 @@ internal static class StringHelper
     public static bool IsDigit(char c)
     {
         return IsNumber(c) ||
-            ('a' <= c && c <= 'f') ||
-            ('A' <= c && c <= 'F');
+               ('a' <= c && c <= 'f') ||
+               ('A' <= c && c <= 'F');
     }
 }
