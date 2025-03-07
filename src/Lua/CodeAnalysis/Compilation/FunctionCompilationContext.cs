@@ -119,7 +119,7 @@ public class FunctionCompilationContext : IDisposable
     /// Push or merge the new instruction.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void PushOrMergeInstruction(in Instruction instruction, in SourcePosition position, ref bool incrementStackPosition)
+    public void PushOrMergeInstruction(in Instruction instruction, in SourcePosition position, ref bool incrementStackPosition)
     {
         if (instructions.Length == 0)
         {
