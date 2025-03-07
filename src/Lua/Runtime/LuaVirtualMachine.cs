@@ -174,33 +174,6 @@ public static partial class LuaVirtualMachine
             Thread.PopCallStackFrame();
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ClearResultsBuffer()
-        {
-            //if (TaskResult == 0) return;
-            // if (TaskResult == 1)
-            // {
-            //     ResultsBuffer[0] = default;
-            //     return;
-            // }
-            //
-            // ResultsBuffer.AsSpan(0, TaskResult).Clear();
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void ClearResultsBuffer(int count)
-        {
-            if (count == 0) return;
-            // if (count == 1)
-            // {
-            //     ResultsBuffer[0] = default;
-            //     return;
-            // }
-            //
-            // ResultsBuffer.AsSpan(0, count).Clear();
-        }
-
-
         bool ExecutePostOperation(PostOperationType postOperation)
         {
             var stackCount = Stack.Count;
@@ -1276,7 +1249,7 @@ public static partial class LuaVirtualMachine
             context.Pc++;
         }
 
-        context.ClearResultsBuffer();
+        results.Clear();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
