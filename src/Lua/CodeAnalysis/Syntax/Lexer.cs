@@ -311,7 +311,6 @@ public ref struct Lexer
             var quote = c1;
             var stringStartOffset = offset;
             var isTerminated = false;
-            var escape = false;
 
             while (span.Length > offset)
             {
@@ -319,33 +318,26 @@ public ref struct Lexer
 
                 if (c is '\n' or '\r')
                 {
-                    if (escape)
-                    {
-                        escape = false;
-                        Advance(1);
-                        continue;
-                    }
-
                     break;
                 }
 
                 if (c is '\\')
                 {
                     Advance(1);
-                    escape = true;
+
                     if (span.Length <= offset) break;
+                    if (span[offset] == '\r')
+                    {
+                        if (span.Length<=offset +1) continue;
+                        if (span[offset+1] == '\n')Advance(1);
+                    }
                 }
                 else if (c == quote)
                 {
                     isTerminated = true;
                     break;
                 }
-                else
-                {
-                    escape = false;
-                }
 
-                
                 Advance(1);
             }
 
@@ -544,8 +536,8 @@ public ref struct Lexer
     static bool IsIdentifier(char c)
     {
         return c == '_' ||
-            ('A' <= c && c <= 'Z') ||
-            ('a' <= c && c <= 'z') ||
-            StringHelper.IsNumber(c);
+               ('A' <= c && c <= 'Z') ||
+               ('a' <= c && c <= 'z') ||
+               StringHelper.IsNumber(c);
     }
 }

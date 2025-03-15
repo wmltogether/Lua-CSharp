@@ -37,7 +37,12 @@ internal static class StringHelper
                         builder.Append('\n');
                         break;
                     case '\r':
-                        builder.Append('\r');
+                        builder.Append('\n');
+                        // check CRLF
+                        if (i + 1 < literal.Length && literal[i + 1] is '\n')
+                        {
+                            i++;
+                        }
                         break;
                     case 'a':
                         builder.Append('\a');
