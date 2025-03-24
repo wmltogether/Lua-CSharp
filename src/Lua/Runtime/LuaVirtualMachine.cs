@@ -157,8 +157,6 @@ public static partial class LuaVirtualMachine
             FrameBase = frame.Base;
             CurrentReturnFrameBase = frame.ReturnBase;
             VariableArgumentCount = frame.VariableArgumentCount;
-
-            //Console.WriteLine($"Push {frame}");
         }
 
         public void PopOnTopCallStackFrames()
@@ -690,7 +688,6 @@ public static partial class LuaVirtualMachine
 
                         static void VarArg(ref VirtualMachineExecutionContext context)
                         {
-                            
                             var instruction = context.Instruction;
                             var iA = instruction.A;
                             var frameBase = context.FrameBase;
@@ -833,7 +830,6 @@ public static partial class LuaVirtualMachine
             return false;
         }
 
-        //Console.WriteLine("Call ReturnBase:" + " " + context.Thread.GetHashCode() + " " + newFrame.ReturnBase + " " + context.BaseCallStackCount + " " + context.Thread.CallStack.Count);
         if (func is Closure)
         {
             context.Push(newFrame);
@@ -869,8 +865,6 @@ public static partial class LuaVirtualMachine
                 stack.PopUntil(top);
                 stack.NotifyTop(top);
             }
-
-            //Console.WriteLine(($" FuncCall Pop {context.Thread.CallStack.Count}"));
 
             context.Thread.PopCallStackFrame();
             return true;
