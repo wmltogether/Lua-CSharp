@@ -207,20 +207,32 @@ public sealed class MathematicsLibrary
     {
         var rand = context.State.Environment[RandomInstanceKey].Read<RandomUserData>().Random;
 
+        // When we call it without arguments, it returns a pseudo-random real number with uniform distribution in the interval [0,1
         if (context.ArgumentCount == 0)
         {
             return new (context.Return(rand.NextDouble()));
         }
+        // When we call it with only one argument, an integer n, it returns an integer pseudo-random number such that 1 <= x <= n.
+        // This is different from the C# random functions.
+        // See: https://www.lua.org/pil/18.html
         else if (context.ArgumentCount == 1)
         {
-            var arg0 = context.GetArgument<double>(0);
-            return new (context.Return(rand.NextDouble() * (arg0 - 1) + 1));
+            var arg0 = context.GetArgument<int>(0);
+            if (arg0 < 0)
+            {
+                LuaRuntimeException.BadArgument(context.State.GetTraceback(), 0, "random");
+            }
+            return new (context.Return(rand.Next(1, arg0 + 1)));
         }
         else
         {
-            var arg0 = context.GetArgument<double>(0);
-            var arg1 = context.GetArgument<double>(1);
-            return new (context.Return(rand.NextDouble() * (arg1 - arg0) + arg0));
+            var arg0 = context.GetArgument<int>(0);
+            var arg1 = context.GetArgument<int>(1);
+            if (arg0 < 1 || arg1 <= arg0)
+            {
+                LuaRuntimeException.BadArgument(context.State.GetTraceback(), 1, "random");
+            }
+            return new (context.Return(rand.Next(arg0, arg1 + 1)));
         }
 
     }
