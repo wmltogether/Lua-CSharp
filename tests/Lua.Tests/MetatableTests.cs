@@ -10,7 +10,7 @@ public class MetatableTests
     public void SetUp()
     {
         state = LuaState.Create();
-        state.OpenBasicLibrary();
+        state.OpenStandardLibraries();
     }
 
     [Test]
@@ -88,25 +88,19 @@ assert(metatable.__newindex.x == 2)
     }
 
     [Test]
-    public async Task Test_Metamethod_Call()
+    public async Task Test_Hook_Metamethods()
     {
-        var source = @"
-metatable = {
-    __call = function(a, b)
-        return a.x + b
-    end
-}
+        var source = """ 
+                     local t = {}
+                     local a =setmetatable({},{__add =function (a,b) return a end})
 
-local a = {}
-a.x = 1
-setmetatable(a, metatable)
-assert(a(2) == 3)
-function tail(a, b)
-    return a(b)
-end
-tail(a, 3)
-assert(tail(a, 3) == 4)
-";
-        await state.DoStringAsync(source);
+                     debug.sethook(function () table.insert(t,debug.traceback()) end,"c")
+                     a =a+a
+                     debug.sethook()
+                     return t
+                     """;
+        var r = await state.DoStringAsync(source);
+        Assert.That(r, Has.Length.EqualTo(1));
+        Assert.That(r[0].Read<LuaTable>()[1].Read<string>(), Does.Contain("stack traceback:"));
     }
 }

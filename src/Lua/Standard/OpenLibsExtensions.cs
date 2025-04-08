@@ -109,13 +109,11 @@ public static class OpenLibsExtensions
             state.SetMetatable(key, metatable);
         }
 
-        metatable[Metamethods.Index] = new LuaFunction("index", (context, buffer, cancellationToken) =>
+        metatable[Metamethods.Index] = new LuaFunction("index", (context, cancellationToken) =>
         {
             context.GetArgument<string>(0);
             var key = context.GetArgument(1);
-
-            buffer.Span[0] = @string[key];
-            return new(1);
+            return new(context.Return(@string[key]));
         });
     }
 
@@ -129,6 +127,18 @@ public static class OpenLibsExtensions
 
         state.Environment["table"] = table;
         state.LoadedModules["table"] = table;
+    }
+    
+    public static void OpenDebugLibrary(this LuaState state)
+    {
+        var debug = new LuaTable(0, DebugLibrary.Instance.Functions.Length);
+        foreach (var func in DebugLibrary.Instance.Functions)
+        {
+            debug[func.Name] = func;
+        }
+
+        state.Environment["debug"] = debug;
+        state.LoadedModules["debug"] = debug;
     }
 
     public static void OpenStringExLibrary(this LuaState state)
@@ -154,6 +164,7 @@ public static class OpenLibsExtensions
         state.OpenOperatingSystemLibrary();
         state.OpenStringLibrary();
         state.OpenTableLibrary();
+        state.OpenDebugLibrary();
     }
 
     public static void OpenExtensionLibraries(this LuaState state)

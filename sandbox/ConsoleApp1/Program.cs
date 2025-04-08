@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Lua.CodeAnalysis.Syntax;
 using Lua.CodeAnalysis.Compilation;
 using Lua.Runtime;
@@ -11,7 +12,7 @@ state.Environment["vec3"] = new LVec3();
 
 try
 {
-    var source = File.ReadAllText("test.lua");
+    var source = File.ReadAllText(GetAbsolutePath("test.lua"));
 
     var syntaxTree = LuaSyntaxTree.Parse(source, "test.lua");
 
@@ -26,12 +27,11 @@ try
 
     Console.WriteLine("Output " + new string('-', 50));
 
-    var results = new LuaValue[64];
-    var resultCount = await state.RunAsync(chunk, results);
+    using var results = await state.RunAsync(chunk);
 
     Console.WriteLine("Result " + new string('-', 50));
 
-    for (int i = 0; i < resultCount; i++)
+    for (int i = 0; i < results.Count; i++)
     {
         Console.WriteLine(results[i]);
     }
@@ -41,6 +41,19 @@ try
 catch (Exception ex)
 {
     Console.WriteLine(ex);
+    if (ex is LuaRuntimeException luaRuntimeException)
+    {
+        Console.WriteLine(luaRuntimeException.LuaTraceback);
+        if (ex is { InnerException: not null } luaEx)
+        {
+            Console.WriteLine(luaEx.InnerException);
+        }
+    }
+}
+
+static string GetAbsolutePath(string relativePath, [CallerFilePath] string callerFilePath = "")
+{
+    return Path.Combine(Path.GetDirectoryName(callerFilePath)!, relativePath);
 }
 
 static void DebugChunk(Chunk chunk, int id)
@@ -56,14 +69,24 @@ static void DebugChunk(Chunk chunk, int id)
         index++;
     }
 
-    Console.WriteLine("Constants " + new string('-', 50)); index = 0;
+    Console.WriteLine("Locals " + new string('-', 50));
+    index = 0;
+    foreach (var local in chunk.Locals.ToArray())
+    {
+        Console.WriteLine($"[{index}]\t{local.Index}\t{local.Name}\t{local.StartPc}\t{local.EndPc}");
+        index++;
+    }
+
+    Console.WriteLine("Constants " + new string('-', 50));
+    index = 0;
     foreach (var constant in chunk.Constants.ToArray())
     {
         Console.WriteLine($"[{index}]\t{constant}");
         index++;
     }
 
-    Console.WriteLine("UpValues " + new string('-', 50)); index = 0;
+    Console.WriteLine("UpValues " + new string('-', 50));
+    index = 0;
     foreach (var upValue in chunk.UpValues.ToArray())
     {
         Console.WriteLine($"[{index}]\t{upValue.Name}\t{(upValue.IsInRegister ? 1 : 0)}\t{upValue.Index}");

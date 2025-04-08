@@ -16,16 +16,22 @@ public sealed class LuaState
     FastStackCore<LuaThread> threadStack;
     readonly LuaTable packages = new();
     readonly LuaTable environment;
+    readonly LuaTable registry = new();
     readonly UpValue envUpValue;
     bool isRunning;
+
+    FastStackCore<LuaDebug.LuaDebugBuffer> debugBufferPool;
 
     internal UpValue EnvUpValue => envUpValue;
     internal ref FastStackCore<LuaThread> ThreadStack => ref threadStack;
     internal ref FastListCore<UpValue> OpenUpValues => ref openUpValues;
+    internal ref FastStackCore<LuaDebug.LuaDebugBuffer> DebugBufferPool => ref debugBufferPool;
 
     public LuaTable Environment => environment;
+    public LuaTable Registry => registry;
     public LuaTable LoadedModules => packages;
     public LuaMainThread MainThread => mainThread;
+
     public LuaThread CurrentThread
     {
         get
@@ -56,24 +62,28 @@ public sealed class LuaState
         envUpValue = UpValue.Closed(environment);
     }
 
-    public async ValueTask<int> RunAsync(Chunk chunk, Memory<LuaValue> buffer, CancellationToken cancellationToken = default)
+    public async ValueTask<LuaResult> RunAsync(Chunk chunk, CancellationToken cancellationToken = default)
     {
+        ThrowIfResultNotDisposed();
         ThrowIfRunning();
 
         Volatile.Write(ref isRunning, true);
         try
         {
             var closure = new Closure(this, chunk);
-            return await closure.InvokeAsync(new()
+            await closure.InvokeAsync(new()
             {
                 State = this,
                 Thread = CurrentThread,
                 ArgumentCount = 0,
                 FrameBase = 0,
+                ReturnFrameBase = 0,
                 SourcePosition = null,
                 RootChunkName = chunk.Name,
                 ChunkName = chunk.Name,
-            }, buffer, cancellationToken);
+            }, cancellationToken);
+
+            return new LuaResult(CurrentThread.Stack, 0);
         }
         finally
         {
@@ -88,32 +98,30 @@ public sealed class LuaState
 
     public Traceback GetTraceback()
     {
-        if (threadStack.Count == 0)
-        {
-            return new()
-            {
-                RootFunc = (Closure)MainThread.GetCallStackFrames()[0].Function,
-                StackFrames = MainThread.GetCallStackFrames()[1..]
-                    .ToArray()
-            };
-        }
+        return GetTraceback(CurrentThread);
+    }
 
+    internal Traceback GetTraceback(LuaThread thread)
+    {
         using var list = new PooledList<CallStackFrame>(8);
-        foreach (var frame in MainThread.GetCallStackFrames()[1..])
+        foreach (var frame in thread.GetCallStackFrames()[1..])
         {
             list.Add(frame);
         }
-        foreach (var thread in threadStack.AsSpan())
+
+        Closure rootFunc;
+        if (thread.GetCallStackFrames()[0].Function is Closure closure)
         {
-            if (thread.CallStack.Count == 0) continue;
-            foreach (var frame in thread.GetCallStackFrames()[1..])
-            {
-                list.Add(frame);
-            }
+            rootFunc = closure;
         }
-        return new()
+        else
         {
-            RootFunc = (Closure)MainThread.GetCallStackFrames()[0].Function,
+            rootFunc = (Closure)MainThread.GetCallStackFrames()[0].Function;
+        }
+
+        return new(this)
+        {
+            RootFunc = rootFunc,
             StackFrames = list.AsSpan().ToArray()
         };
     }
@@ -197,6 +205,14 @@ public sealed class LuaState
                 openUpValues.RemoveAtSwapback(i);
                 i--;
             }
+        }
+    }
+
+    void ThrowIfResultNotDisposed()
+    {
+        if (MainThread.Stack.Count != 0)
+        {
+            throw new InvalidOperationException("LuaResult is not disposed");
         }
     }
 
