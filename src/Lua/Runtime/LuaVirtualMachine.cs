@@ -821,7 +821,8 @@ public static partial class LuaVirtualMachine
         }
 
         var thread = context.Thread;
-        var (argumentCount, variableArgumentCount) = PrepareForFunctionCall(thread, func, instruction, newBase, isMetamethod);newBase += variableArgumentCount;
+        var (argumentCount, variableArgumentCount) = PrepareForFunctionCall(thread, func, instruction, newBase, isMetamethod);
+        newBase += variableArgumentCount;
         var newFrame = func.CreateNewFrame(ref context, newBase, RA, variableArgumentCount);
 
         thread.PushCallStackFrame(newFrame);
