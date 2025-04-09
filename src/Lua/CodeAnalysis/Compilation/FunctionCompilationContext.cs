@@ -149,7 +149,7 @@ public class FunctionCompilationContext : IDisposable
 
                 if (
                     // available to merge and  last A is not local variable
-                    lastInstruction.A == instruction.B && !activeLocals[lastInstruction.A] && lastInstruction.A != instruction.B)
+                    lastInstruction.A == instruction.B && !activeLocals[lastInstruction.A] && lastInstruction.A != lastInstruction.B)
                 {
                     switch (lastInstruction.OpCode)
                     {
@@ -158,7 +158,7 @@ public class FunctionCompilationContext : IDisposable
                         case OpCode.LoadNil when lastInstruction.B == 0:
                         case OpCode.GetUpVal:
                         case OpCode.GetTabUp:
-                        case OpCode.GetTable:
+                        //case OpCode.GetTable:
                         case OpCode.SetTabUp:
                         case OpCode.SetUpVal:
                         case OpCode.SetTable:
