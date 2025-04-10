@@ -51,7 +51,7 @@ public sealed class LuaTable
                 if (MathEx.IsInteger(d))
                 {
                     var index = (int)d;
-                    if (0 < index && index <= Math.Max(array.Length * 2, 8))
+                    if (0 < index && index <= 0xf00 && index <= Math.Max(array.Length * 2, 8))
                     {
                         if (array.Length < index)
                             EnsureArrayCapacity(index);
