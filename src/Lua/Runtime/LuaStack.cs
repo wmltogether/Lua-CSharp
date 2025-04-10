@@ -21,12 +21,7 @@ public sealed class LuaStack(int initialSize = 256)
 
         static void Resize(ref LuaValue[] array, int newSize)
         {
-            var size = array.Length;
-            while (size < newSize)
-            {
-                size *= 2;
-            }
-
+            var size = newSize <= 8 ? 8 : MathEx.NextPowerOfTwo(newSize);
             if (1000000 < size)
             {
                 throw new LuaException("Lua Stack overflow");

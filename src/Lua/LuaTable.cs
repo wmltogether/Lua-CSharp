@@ -53,7 +53,7 @@ public sealed class LuaTable
                 if (MathEx.IsInteger(d))
                 {
                     var index = (int)d;
-                    if (0 < index && index <= Math.Max(array.Length * 2, 8))
+                    if (0 < index && index <= Math.Min(Math.Max(array.Length * 2, 8), 0x0f00))
                     {
                         if (array.Length < index)
                             EnsureArrayCapacity(index);
@@ -251,11 +251,7 @@ public sealed class LuaTable
         var prevLength = array.Length;
         var newLength = array.Length;
         if (newLength == 0) newLength = 8;
-
-        while (newLength < newCapacity)
-        {
-            newLength *= 2;
-        }
+        newLength = newCapacity <= 8 ? 8 : MathEx.NextPowerOfTwo(newCapacity);
 
         Array.Resize(ref array, newLength);
 

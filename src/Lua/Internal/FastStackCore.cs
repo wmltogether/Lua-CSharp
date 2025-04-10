@@ -121,13 +121,8 @@ public struct FastStackCore<T>
             array = new T[InitialCapacity];
         }
 
-        var newSize = array.Length;
-        while (newSize < capacity)
-        {
-            newSize *= 2;
-        }
-
-        Array.Resize(ref array, newSize);
+        var newSize = capacity <= InitialCapacity ? InitialCapacity : MathEx.NextPowerOfTwo(capacity);
+        if (newSize != array.Length) Array.Resize(ref array, newSize);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -19,6 +19,7 @@ namespace Lua.Internal
         private int _freeCount;
         private int _version;
         private const int StartOfFreeList = -3;
+        private const int InitialCapacity = 8;
 
         private int _nilCount;
 
@@ -154,13 +155,7 @@ namespace Lua.Internal
 
         private void Initialize(int capacity)
         {
-            var newSize = 8;
-            while (newSize < capacity)
-            {
-                newSize *= 2;
-            }
-
-            int size = newSize;
+            int size = capacity <= InitialCapacity ? InitialCapacity : MathEx.NextPowerOfTwo(capacity);
             int[] buckets = new int[size];
             Entry[] entries = new Entry[size];
 
