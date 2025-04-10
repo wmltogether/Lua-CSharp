@@ -66,10 +66,4 @@ public class LuaTests
     {
         await state.DoFileAsync(FileHelper.GetAbsolutePath("tests-lua/verybig.lua"));
     }
-
-    [Test]
-    public async Task Test_Local()
-    {
-        await state.DoFileAsync(FileHelper.GetAbsolutePath("tests-lua/test_local.lua"));
-    }
 }

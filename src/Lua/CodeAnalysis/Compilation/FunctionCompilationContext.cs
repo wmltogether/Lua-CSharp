@@ -156,13 +156,13 @@ public class FunctionCompilationContext : IDisposable
                         case OpCode.LoadK:
                         case OpCode.LoadBool when lastInstruction.C == 0:
                         case OpCode.LoadNil when lastInstruction.B == 0:
-                        case OpCode.GetUpVal:
-                        case OpCode.GetTabUp:
+                        //case OpCode.GetUpVal:
+                        //case OpCode.GetTabUp:
                         //case OpCode.GetTable:
-                        case OpCode.SetTabUp:
-                        case OpCode.SetUpVal:
-                        case OpCode.SetTable:
-                        case OpCode.NewTable:
+                        //case OpCode.SetTabUp:
+                        //case OpCode.SetUpVal:
+                        //case OpCode.SetTable:
+                        //case OpCode.NewTable:
                         case OpCode.Self:
                         case OpCode.Add:
                         case OpCode.Sub:

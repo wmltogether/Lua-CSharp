@@ -64,4 +64,27 @@ return i";
         Assert.That(result, Has.Length.EqualTo(1));
         Assert.That(result[0], Is.EqualTo(new LuaValue(10)));
     }
+
+    [Test]
+    public async Task Test_LocalVariable_3()
+    {
+        var source = @"
+sun = {}
+sun.mass = 1
+local bodies = { sun, sun }
+local function test_local(b, a)
+    local r = 0
+    for i = 1, a do
+        local bi = b[i]
+        local bim = bi.mass
+        r = r + bim
+    end
+    return r
+end
+
+local a = #bodies
+return (test_local(bodies, a))";
+        var result = await LuaState.Create().DoStringAsync(source);
+        Assert.That(result[0], Is.EqualTo(new LuaValue(2)));
+    }
 }
