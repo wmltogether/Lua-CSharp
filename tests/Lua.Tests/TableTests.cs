@@ -46,24 +46,20 @@ public class TableTests
     public void Test_TableResize()
     {
         var table = new LuaTable();
-        for (int i = 1; i < 1000; i++)
+        int i = 1;
+        int count = 10000;
+        while (count > 0)
         {
-            table[i] = i;
-        }
-
-        for (int i = 30; i >= 2; i--)
-        {
-            var key = 1 << i;
+            var key = i;
             table[key] = key;
+            table[key * 2 - key / 2] = key;
+            i += key;
+            count--;
         }
 
+        table[1] = 0;
         table[int.MaxValue - 1] = 0;
-
-        int p = 1 << 4;
-        Assert.That(table[p], Is.EqualTo(new LuaValue(p)));
-        p = 1 << 16;
-        Assert.That(table[p], Is.EqualTo(new LuaValue(p)));
-        p = 1 << 22;
-        Assert.That(table[p], Is.EqualTo(new LuaValue(p)));
+        Assert.That(table[1], Is.EqualTo(new LuaValue(0)));
+        Assert.That(table[int.MaxValue - 1], Is.EqualTo(new LuaValue(0)));
     }
 }
