@@ -15,7 +15,7 @@ public sealed class Chunk
     public required Chunk[] Functions { get; init; }
     public required int ParameterCount { get; init; }
     public required bool HasVariableArguments { get; init; }
-    public required byte MaxStackPosition { get; init; }
+    public required ushort MaxStackPosition { get; init; }
     public required int LineDefined { get; init; }
     public required int LastLineDefined { get; init; }
 

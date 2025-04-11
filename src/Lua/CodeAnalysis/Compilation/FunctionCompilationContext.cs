@@ -69,7 +69,7 @@ public class FunctionCompilationContext : IDisposable
     /// <summary>
     /// Maximum local stack size
     /// </summary>
-    public byte MaxStackPosition { get; set; }
+    public ushort MaxStackPosition { get; set; }
 
     /// <summary>
     /// Chunk name (for debug)
@@ -215,7 +215,7 @@ public class FunctionCompilationContext : IDisposable
                                 var last2A = last2Instruction.A;
                                 if (last2Instruction.OpCode == OpCode.Move && !activeLocals[last2A] && instruction.C == last2A)
                                 {
-                                    last2Instruction = Instruction.SetTable((byte)(lastB), instruction.B, last2Instruction.B);
+                                    last2Instruction = Instruction.SetTable((ushort)(lastB), instruction.B, last2Instruction.B);
                                     instructions.RemoveAtSwapback(instructions.Length - 1);
                                     instructionPositions.RemoveAtSwapback(instructionPositions.Length - 1);
                                     instructionPositions[^1] = position;
@@ -224,7 +224,7 @@ public class FunctionCompilationContext : IDisposable
                                 }
                             }
 
-                            lastInstruction = Instruction.SetTable((byte)(lastB), instruction.B, instruction.C);
+                            lastInstruction = Instruction.SetTable(lastB, instruction.B, instruction.C);
                             instructionPositions[^1] = position;
                             incrementStackPosition = false;
                             return;
@@ -399,7 +399,7 @@ public class FunctionCompilationContext : IDisposable
         breakQueue.Add(description);
     }
 
-    public void ResolveAllBreaks(byte startPosition, int endPosition, ScopeCompilationContext loopScope)
+    public void ResolveAllBreaks(ushort startPosition, int endPosition, ScopeCompilationContext loopScope)
     {
         foreach (var description in breakQueue.AsSpan())
         {

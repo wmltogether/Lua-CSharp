@@ -33,19 +33,25 @@ public ref struct Parser
             var node = ParseStatement(ref enumerator);
             root.Add(node);
         }
-        var tokensSpan = tokens.AsSpan();
-        var lastToken = tokensSpan[0];
-        for (int i = tokensSpan.Length-1; 0<i;i--)
+        
+        SourcePosition lastPosition = default;
+        if (tokens.Count > 0)
         {
-            var t = tokensSpan[i];
-            if (t.Type is not SyntaxTokenType.EndOfLine)
+            var tokensSpan = tokens.AsSpan();
+            var lastToken = tokensSpan[0];
+            for (int i = tokensSpan.Length - 1; 0 < i ; i--)
             {
-                lastToken = t;
-                break;
+                var t = tokensSpan[i];
+                if (t.Type is not SyntaxTokenType.EndOfLine)
+                {
+                    lastToken = t;
+                    break;
+                }
             }
+            lastPosition = lastToken.Position;
         }
 
-        var tree = new LuaSyntaxTree(root.AsSpan().ToArray(),lastToken.Position);
+        var tree = new LuaSyntaxTree(root.AsSpan().ToArray(), lastPosition);
         Dispose();
 
         return tree;

@@ -1,83 +1,86 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Lua.Runtime;
 
+[StructLayout(LayoutKind.Explicit, Pack = 2)]
 public struct Instruction : IEquatable<Instruction>
 {
-    uint _value;
+    [FieldOffset(0)] ulong _value;
+    [FieldOffset(0)] OpCode opCode;
+    [FieldOffset(1)] ushort a;
+    [FieldOffset(3)] ushort b;
+    [FieldOffset(5)] ushort c;
+    [FieldOffset(3)] uint bx;
 
-    public uint Value
-    {
-        get => _value;
-        set => _value = value;
-    }
+    public readonly ulong Value => _value;
 
     public OpCode OpCode
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (OpCode)(byte)(_value & 0x3F); // 6 bits
+        readonly get => opCode;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _value = (_value & 0xFFFFFFC0) | ((uint)value & 0x3F);
+        set => opCode = value;
     }
 
-    public byte A
+    public ushort A
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (byte)((_value >> 6)); // 8 bits
+        readonly get => a;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _value = (_value & 0xFFFFC03F) | (((uint)value & 0xFF) << 6);
+        set => a = value;
     }
 
     public ushort B
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (ushort)((_value >> 23) & 0x1FF); // 9 bits
+        readonly get => b;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _value = (_value & 0xC07FFFFF) | (((uint)value & 0x1FF) << 23);
+        set => b = value;
     }
 
-    internal uint UIntB
+    internal readonly uint UIntB
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (_value >> 23) & 0x1FF; // 9 bits
+        get => b;
     }
 
     public ushort C
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (ushort)((_value >> 14) & 0x1FF); // 9 bits
+        readonly get => c;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _value = (_value & 0xFF803FFF) | (((uint)value & 0x1FF) << 14);
+        set => c = value;
     }
 
-    internal uint UIntC
+    internal readonly uint UIntC
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (_value >> 14) & 0x1FF; // 9 bits
+        get => c; //  
     }
 
     public uint Bx
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (_value >> 14) & 0x3FFFF; // 18 bits (14-31)
+        readonly get => bx;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _value = (_value & 0x00003FFF) | ((value & 0x3FFFF) << 14);
+        set => bx = value;
     }
 
     public int SBx
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int)(Bx - 131071); // signed 18 bits
+        readonly get => (int)(Bx - 131071); // signed 18 bits
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         set => Bx = (uint)(value + 131071);
     }
 
-    public uint Ax
+    public ulong Ax
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (_value >> 6) & 0x3FFFFFF; // 26 bits (6-31)
+        readonly get => (_value >> 8) & 0x_FFFF_FFFF_FFFF;
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        set => _value = (_value & 0x0000003F) | ((value & 0x3FFFFFF) << 6);
+        set => this._value = (this._value & 0xFF) | ((value & 0x_FFFF_FFFF_FFFF) << 8);
     }
 
     public bool Equals(Instruction other)
@@ -87,8 +90,7 @@ public struct Instruction : IEquatable<Instruction>
 
     public override bool Equals(object? obj)
     {
-        if (obj is Instruction instruction) return Equals(instruction);
-        return false;
+        return (obj is Instruction instruction) && Equals(instruction);
     }
 
     public override int GetHashCode()
@@ -157,7 +159,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := R(B)
     /// </summary>
-    public static Instruction Move(byte a, ushort b)
+    public static Instruction Move(ushort a, ushort b)
     {
         return new()
         {
@@ -170,7 +172,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := Kst(Bx)
     /// </summary>
-    public static Instruction LoadK(byte a, uint bx)
+    public static Instruction LoadK(ushort a, uint bx)
     {
         return new()
         {
@@ -183,7 +185,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := Kst(extra arg)
     /// </summary>
-    public static Instruction LoadKX(byte a)
+    public static Instruction LoadKX(ushort a)
     {
         return new()
         {
@@ -196,7 +198,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <para>R(A) := (Bool)B</para>
     /// <para>if (C) pc++</para>
     /// </summary>
-    public static Instruction LoadBool(byte a, ushort b, ushort c)
+    public static Instruction LoadBool(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -210,7 +212,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A), R(A+1), ..., R(A+B) := nil
     /// </summary>
-    public static Instruction LoadNil(byte a, ushort b)
+    public static Instruction LoadNil(ushort a, ushort b)
     {
         return new()
         {
@@ -223,7 +225,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := UpValue[B]
     /// </summary>
-    public static Instruction GetUpVal(byte a, ushort b)
+    public static Instruction GetUpVal(ushort a, ushort b)
     {
         return new()
         {
@@ -236,7 +238,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := UpValue[B][RK(C)]
     /// </summary>
-    public static Instruction GetTabUp(byte a, ushort b, ushort c)
+    public static Instruction GetTabUp(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -250,7 +252,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := R(B)[RK(C)]
     /// </summary>
-    public static Instruction GetTable(byte a, ushort b, ushort c)
+    public static Instruction GetTable(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -264,7 +266,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// UpValue[B] := R(A)
     /// </summary>
-    public static Instruction SetUpVal(byte a, ushort b)
+    public static Instruction SetUpVal(ushort a, ushort b)
     {
         return new()
         {
@@ -277,7 +279,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// UpValue[A][RK(B)] := RK(C)
     /// </summary>
-    public static Instruction SetTabUp(byte a, ushort b, ushort c)
+    public static Instruction SetTabUp(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -291,7 +293,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A)[RK(B)] := RK(C)
     /// </summary>
-    public static Instruction SetTable(byte a, ushort b, ushort c)
+    public static Instruction SetTable(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -305,7 +307,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := {} (size = B,C)
     /// </summary>
-    public static Instruction NewTable(byte a, ushort b, ushort c)
+    public static Instruction NewTable(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -319,7 +321,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A+1) := R(B); R(A) := R(B)[RK(C)]
     /// </summary>
-    public static Instruction Self(byte a, ushort b, ushort c)
+    public static Instruction Self(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -333,7 +335,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := RK(B) + RK(C)
     /// </summary>
-    public static Instruction Add(byte a, ushort b, ushort c)
+    public static Instruction Add(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -347,7 +349,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := RK(B) - RK(C)
     /// </summary>
-    public static Instruction Sub(byte a, ushort b, ushort c)
+    public static Instruction Sub(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -361,7 +363,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := RK(B) * RK(C)
     /// </summary>
-    public static Instruction Mul(byte a, ushort b, ushort c)
+    public static Instruction Mul(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -375,7 +377,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := RK(B) / RK(C)
     /// </summary>
-    public static Instruction Div(byte a, ushort b, ushort c)
+    public static Instruction Div(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -389,7 +391,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := RK(B) % RK(C)
     /// </summary>
-    public static Instruction Mod(byte a, ushort b, ushort c)
+    public static Instruction Mod(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -403,7 +405,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := RK(B) ^ RK(C)
     /// </summary>
-    public static Instruction Pow(byte a, ushort b, ushort c)
+    public static Instruction Pow(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -417,7 +419,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := -R(B)
     /// </summary>
-    public static Instruction Unm(byte a, ushort b)
+    public static Instruction Unm(ushort a, ushort b)
     {
         return new()
         {
@@ -430,7 +432,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := not R(B)
     /// </summary>
-    public static Instruction Not(byte a, ushort b)
+    public static Instruction Not(ushort a, ushort b)
     {
         return new()
         {
@@ -443,7 +445,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := length of R(B)
     /// </summary>
-    public static Instruction Len(byte a, ushort b)
+    public static Instruction Len(ushort a, ushort b)
     {
         return new()
         {
@@ -456,7 +458,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := R(B).. ... ..R(C)
     /// </summary>
-    public static Instruction Concat(byte a, ushort b, ushort c)
+    public static Instruction Concat(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -471,7 +473,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <para>pc += sBx</para>
     /// <para>if (A) close all upvalues >= R(A - 1)</para>
     /// </summary>
-    public static Instruction Jmp(byte a, int sBx)
+    public static Instruction Jmp(ushort a, int sBx)
     {
         return new()
         {
@@ -484,7 +486,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// if ((RK(B) == RK(C)) ~= A) then pc++
     /// </summary>
-    public static Instruction Eq(byte a, ushort b, ushort c)
+    public static Instruction Eq(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -498,7 +500,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// if ((RK(B) &lt; RK(C)) ~= A) then pc++
     /// </summary>
-    public static Instruction Lt(byte a, ushort b, ushort c)
+    public static Instruction Lt(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -512,7 +514,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// if ((RK(B) &lt;= RK(C)) ~= A) then pc++
     /// </summary>
-    public static Instruction Le(byte a, ushort b, ushort c)
+    public static Instruction Le(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -526,7 +528,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// if not (R(A) &lt;=&gt; C) then pc++
     /// </summary>
-    public static Instruction Test(byte a, ushort c)
+    public static Instruction Test(ushort a, ushort c)
     {
         return new()
         {
@@ -539,7 +541,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// if (R(B) &lt;=&gt; C) then R(A) := R(B) else pc++
     /// </summary>
-    public static Instruction TestSet(byte a, ushort b, ushort c)
+    public static Instruction TestSet(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -553,7 +555,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A), ... ,R(A+C-2) := R(A)(R(A+1), ... ,R(A+B-1))
     /// </summary>
-    public static Instruction Call(byte a, ushort b, ushort c)
+    public static Instruction Call(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -567,7 +569,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// return R(A)(R(A+1), ... ,R(A+B-1))
     /// </summary>
-    public static Instruction TailCall(byte a, ushort b, ushort c)
+    public static Instruction TailCall(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -581,7 +583,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// return R(A), ... ,R(A+B-2)
     /// </summary>
-    public static Instruction Return(byte a, ushort b)
+    public static Instruction Return(ushort a, ushort b)
     {
         return new()
         {
@@ -595,7 +597,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <para>R(A) += R(A+2);</para>
     /// <para>if R(A) &lt;?= R(A+1) then { pc += sBx; R(A+3) = R(A) }</para>
     /// </summary>
-    public static Instruction ForLoop(byte a, int sBx)
+    public static Instruction ForLoop(ushort a, int sBx)
     {
         return new()
         {
@@ -609,7 +611,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <para>R(A) -= R(A+2)</para>
     /// <para>pc += sBx</para>
     /// </summary>
-    public static Instruction ForPrep(byte a, int sBx)
+    public static Instruction ForPrep(ushort a, int sBx)
     {
         return new()
         {
@@ -622,7 +624,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A+3), ... ,R(A+2+C) := R(A)(R(A+1), R(A+2));
     /// </summary>
-    public static Instruction TForCall(byte a, ushort c)
+    public static Instruction TForCall(ushort a, ushort c)
     {
         return new()
         {
@@ -635,7 +637,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// if R(A+1) ~= nil then { R(A) = R(A+1); pc += sBx }
     /// </summary>
-    public static Instruction TForLoop(byte a, int sBx)
+    public static Instruction TForLoop(ushort a, int sBx)
     {
         return new()
         {
@@ -648,7 +650,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A)[(C-1) * FPF + i] := R(A+i), 1 &lt;= i &lt;= B
     /// </summary>
-    public static Instruction SetList(byte a, ushort b, ushort c)
+    public static Instruction SetList(ushort a, ushort b, ushort c)
     {
         return new()
         {
@@ -662,7 +664,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A) := closure(KPROTO[Bx])
     /// </summary>
-    public static Instruction Closure(byte a, int sBx)
+    public static Instruction Closure(ushort a, int sBx)
     {
         return new()
         {
@@ -675,7 +677,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// R(A), R(A+1), ..., R(A+B-2) = vararg
     /// </summary>
-    public static Instruction VarArg(byte a, ushort b)
+    public static Instruction VarArg(ushort a, ushort b)
     {
         return new()
         {
@@ -688,7 +690,7 @@ public struct Instruction : IEquatable<Instruction>
     /// <summary>
     /// extra (larger) argument for previous opcode
     /// </summary>
-    public static Instruction ExtraArg(uint ax)
+    public static Instruction ExtraArg(ulong ax)
     {
         return new()
         {

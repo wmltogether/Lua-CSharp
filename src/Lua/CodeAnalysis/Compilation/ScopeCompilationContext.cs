@@ -35,12 +35,12 @@ public class ScopeCompilationContext : IDisposable
 
     internal BitFlags256 ActiveLocalVariables = default;
 
-    public byte StackStartPosition { get; private set; }
-    public byte StackPosition { get; set; }
+    public ushort StackStartPosition { get; private set; }
+    public ushort StackPosition { get; set; }
 
-    public byte StackTopPosition
+    public ushort StackTopPosition
     {
-        get => (byte)(StackPosition - 1);
+        get => (ushort)(StackPosition - 1);
     }
 
     public bool HasCapturedLocalVariables { get; internal set; }
@@ -83,7 +83,7 @@ public class ScopeCompilationContext : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void TryPushCloseUpValue(byte top, SourcePosition position)
+    public void TryPushCloseUpValue(ushort top, SourcePosition position)
     {
         if (HasCapturedLocalVariables && top != 0)
         {

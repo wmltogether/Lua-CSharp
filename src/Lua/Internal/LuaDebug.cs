@@ -450,7 +450,7 @@ internal readonly struct LuaDebug : IDisposable
                 case OpCode.LoadK:
                 case OpCode.LoadKX:
                     {
-                        uint b = (op == OpCode.LoadKX)
+                        var b = (op == OpCode.LoadKX)
                             ? i.Bx
                             : (chunk.Instructions[pc + 1].Ax);
                         if (chunk.Constants[b].TryReadString(out name))
