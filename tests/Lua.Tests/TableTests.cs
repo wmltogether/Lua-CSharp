@@ -62,4 +62,24 @@ public class TableTests
         Assert.That(table[1], Is.EqualTo(new LuaValue(0)));
         Assert.That(table[int.MaxValue - 1], Is.EqualTo(new LuaValue(0)));
     }
+    
+    [Test]
+    public async Task Test_TableResize2()
+    {
+        var source = @"
+local table = {}
+local i = 1
+local count = 10
+while count > 0 do
+    local key = i
+    table[key] = key
+    i = i + key
+    count = count - 1
+    print(key)
+end
+
+print (""OK!"")
+";
+        _ = await LuaState.Create().DoStringAsync(source);
+    }
 }
