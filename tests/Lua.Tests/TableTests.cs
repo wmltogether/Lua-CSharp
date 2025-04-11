@@ -1,3 +1,5 @@
+using Lua.Standard;
+
 namespace Lua.Tests;
 
 public class TableTests
@@ -64,22 +66,24 @@ public class TableTests
     }
     
     [Test]
-    public async Task Test_TableResize2()
+    public async Task Test_TableFloatKey()
     {
         var source = @"
 local table = {}
 local i = 1
-local count = 10
+local count = 10000
 while count > 0 do
     local key = i
+    -- float number key
+    local key2 = key * 2 - key / 2
     table[key] = key
+    table[key2] = key2
     i = i + key
     count = count - 1
-    print(key)
 end
-
-print (""OK!"")
 ";
-        _ = await LuaState.Create().DoStringAsync(source);
+        var state = LuaState.Create();
+        state.OpenStandardLibraries();
+        _ = await state.DoStringAsync(source);
     }
 }
