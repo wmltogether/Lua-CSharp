@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Lua.Internal;
@@ -75,7 +76,7 @@ public sealed class StringLibrary
     public ValueTask<int> Dump(LuaFunctionExecutionContext context, CancellationToken cancellationToken)
     {
         // stirng.dump is not supported (throw exception)
-        throw new NotSupportedException("stirng.dump is not supported");
+        throw new NotSupportedException("string.dump is not supported");
     }
 
     public ValueTask<int> Find(LuaFunctionExecutionContext context, CancellationToken cancellationToken)
@@ -85,9 +86,7 @@ public sealed class StringLibrary
         var init = context.HasArgument(2)
             ? context.GetArgument<double>(2)
             : 1;
-        var plain = context.HasArgument(3)
-            ? context.GetArgument(3).ToBoolean()
-            : false;
+        var plain = context.HasArgument(3) && context.GetArgument(3).ToBoolean();
 
         LuaRuntimeException.ThrowBadArgumentIfNumberIsNotInteger(context.State, "find", 3, init);
 
@@ -98,7 +97,7 @@ public sealed class StringLibrary
         }
 
         // out of range
-        if (init != 1 && (init < 1 || init > s.Length))
+        if (Math.Abs(init - 1) > 0.000001f && (init < 1 || init > s.Length))
         {
             return new(context.Return(LuaValue.Nil));
         }
@@ -251,29 +250,29 @@ public sealed class StringLibrary
                         {
                             case 'f':
                                 formattedValue = precision < 0
-                                    ? f.ToString()
-                                    : f.ToString($"F{precision}");
+                                    ? f.ToString(CultureInfo.InvariantCulture)
+                                    : f.ToString($"F{precision}", CultureInfo.InvariantCulture);
                                 break;
                             case 'e':
                                 formattedValue = precision < 0
-                                    ? f.ToString()
-                                    : f.ToString($"E{precision}");
+                                    ? f.ToString(CultureInfo.InvariantCulture)
+                                    : f.ToString($"E{precision}", CultureInfo.InvariantCulture);
                                 break;
                             case 'g':
                                 formattedValue = precision < 0
-                                    ? f.ToString()
-                                    : f.ToString($"G{precision}");
+                                    ? f.ToString(CultureInfo.InvariantCulture)
+                                    : f.ToString($"G{precision}", CultureInfo.InvariantCulture);
                                 break;
                             case 'G':
                                 formattedValue = precision < 0
-                                    ? f.ToString().ToUpper()
-                                    : f.ToString($"G{precision}").ToUpper();
+                                    ? f.ToString(CultureInfo.InvariantCulture).ToUpperInvariant()
+                                    : f.ToString($"G{precision}", CultureInfo.InvariantCulture).ToUpperInvariant();
                                 break;
                         }
 
                         if (plusSign && f >= 0)
                         {
-                            formattedValue = $"+{formattedValue}";
+                            formattedValue = string.Format(CultureInfo.InvariantCulture, "+{0}", formattedValue);
                         }
 
                         break;
@@ -301,11 +300,12 @@ public sealed class StringLibrary
                                 formattedValue = parameter.Read<bool>() ? "true" : "false";
                                 break;
                             case LuaValueType.String:
-                                formattedValue = $"\"{StringHelper.Escape(parameter.Read<string>())}\"";
+                                formattedValue = string.Format(CultureInfo.InvariantCulture, "\"{0}\"",
+                                    StringHelper.Escape(parameter.Read<string>()));
                                 break;
                             case LuaValueType.Number:
                                 // TODO: floating point numbers must be in hexadecimal notation
-                                formattedValue = parameter.Read<double>().ToString();
+                                formattedValue = parameter.Read<double>().ToString(CultureInfo.InvariantCulture);
                                 break;
                             default:
 
@@ -339,20 +339,20 @@ public sealed class StringLibrary
                                 {
                                     var integer = checked((long)x);
                                     formattedValue = precision < 0
-                                        ? integer.ToString()
-                                        : integer.ToString($"D{precision}");
+                                        ? integer.ToString(CultureInfo.InvariantCulture)
+                                        : integer.ToString($"D{precision}", CultureInfo.InvariantCulture);
                                 }
                                 break;
                             case 'u':
                                 {
                                     var integer = checked((ulong)x);
                                     formattedValue = precision < 0
-                                        ? integer.ToString()
-                                        : integer.ToString($"D{precision}");
+                                        ? integer.ToString(CultureInfo.InvariantCulture)
+                                        : integer.ToString($"D{precision}", CultureInfo.InvariantCulture);
                                 }
                                 break;
                             case 'c':
-                                formattedValue = ((char)(int)x).ToString();
+                                formattedValue = ((char)(int)x).ToString(CultureInfo.InvariantCulture);
                                 break;
                             case 'x':
                                 {
@@ -380,7 +380,7 @@ public sealed class StringLibrary
 
                         if (plusSign && x >= 0)
                         {
-                            formattedValue = $"+{formattedValue}";
+                            formattedValue = string.Format(CultureInfo.InvariantCulture, "+{0}", formattedValue);
                         }
 
                         break;
