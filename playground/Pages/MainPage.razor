@@ -1,0 +1,79 @@
+﻿@page "/"
+@using Microsoft.FluentUI.AspNetCore.Components.Icons.Filled
+@using Playground.CodeSpaces
+<div style="padding:10px; width: 100%; height: calc(100dvh - 36px); ">
+    <FluentToolbar Orientation="Orientation.Horizontal" Width="100%" Style="height: 48px">
+        <FluentButton Title="Run" IconStart="@(_iconRun)" Appearance="Appearance.Neutral" 
+                       Color="#669462"
+                      OnClick="OnBtnRun_Clicked"
+        />
+    </FluentToolbar>
+    <FluentSplitter Orientation="@Orientation.Horizontal" BarSize="6" Panel1MinSize="50%" Panel2MinSize="100px">
+        <Panel1>
+            <FluentStack Orientation="Orientation.Vertical" Style="height: 100%; margin-left: 4px ;margin-right: 4px ">
+                <div style="min-height: 770px; width: 100%; height: calc(100% - 100px) ">
+                    <CodeEditorView @ref="_codeEditorView">
+                    </CodeEditorView>
+                </div>
+            </FluentStack>
+            
+        </Panel1>
+        <Panel2>
+            <div style="min-height: 770px; height: 100%; margin-left: 6px ;margin-right: 6px">
+                <OutputPanelView @ref="_outputPanelView"/>
+            </div>
+        </Panel2>
+    </FluentSplitter>
+</div>
+<FluentFooter/>
+@code {
+    
+    private readonly Icon _iconRun = new Size20.Play();
+    private Lazy<CodeRunner> _codeRunnerLazy = new Lazy<CodeRunner>(() => new CodeRunner(), true);
+
+    private CodeRunner CodeRunner => _codeRunnerLazy.Value;
+    
+    private OutputPanelView? _outputPanelView;
+    private CodeEditorView? _codeEditorView;
+    
+    private CancellationTokenSource? _cancellationTokenSource;
+
+    private string InputValue { get; set; } = "";
+    
+    private async Task OnBtnRun_Clicked()
+    {
+        if (_codeEditorView is null) return;
+        if (_cancellationTokenSource != null)
+        {
+            _cancellationTokenSource.Cancel();
+        }
+        _cancellationTokenSource = new CancellationTokenSource();
+        var code = await _codeEditorView!.GetCodeTextAsync();
+        if (string.IsNullOrEmpty(code))
+        {
+            OnConsoleReset();
+            return;
+        }
+
+        OnConsoleReset();
+        CodeRunner.ConsoleOutput = OnConsoleOutput;
+        await CodeRunner.RunAsync(code, InputValue, CodeRunner.ScriptType.Lua, _cancellationTokenSource.Token);
+    }
+
+    private void OnConsoleOutput(string output)
+    {
+        if (_outputPanelView != null)
+        {
+            _outputPanelView.WriteLine(output);
+        }
+    }
+
+    private void OnConsoleReset()
+    {
+        if (_outputPanelView != null)
+        {
+            _outputPanelView.Reset();
+        }
+    }
+
+}

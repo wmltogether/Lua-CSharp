@@ -1,0 +1,38 @@
+@inherits ComponentBase
+<FluentLayout Style="margin-top: 2px; height: 100% ;padding: 6px">
+    <FluentLabel Style="margin-bottom: 6px" Typo="@Typography.Body"
+                 Weight="FontWeight.Bold">Output:</FluentLabel>
+    <FluentTextArea @bind-Value=@Content 
+                    Placeholder=""
+                    Embedded="true"
+                    Style="width: 100%;height: calc(100% - 32px)" 
+                    ReadOnly="true"
+                    Maxlength="500"
+                    Class="output-text-area"
+                    Appearance="FluentInputAppearance.Filled"></FluentTextArea>
+</FluentLayout>
+@code {
+    private string Content { get; set; } = "";
+    
+    private List<string?> _outputs = new List<string?>();
+    public void SetContent(string content)
+    {
+        Content = content;
+        this.StateHasChanged();
+    }
+
+
+    public void Reset()
+    {
+        Content = "";
+        _outputs.Clear();
+        this.StateHasChanged();
+    }
+    public void WriteLine(string output)
+    {
+        _outputs.Add(output);
+        Content = string.Join("\n", _outputs);
+        this.StateHasChanged();
+    }
+
+}

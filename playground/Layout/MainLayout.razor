@@ -1,0 +1,27 @@
+﻿
+@inherits LayoutComponentBase
+@using Icons = Microsoft.FluentUI.AspNetCore.Components.Icons
+<FluentStack Orientation="Orientation.Horizontal"
+             Style="justify-content: start; align-items: start; column-gap: 0; row-gap: 10px; width: 100%; flex-grow: 1;">
+    <div>
+        <FluentStack Orientation="Orientation.Vertical" Style="height: 100vh; width: 64px">
+            <FluentAppBar Orientation="Orientation.Vertical" Style="@(" background-color: var(--neutral-layer-2);")">
+                <FluentAppBarItem Href="/"
+                                  IconRest="@(new Icons.Regular.Size20.CodeBlock())"
+                                  IconActive="@(new Icons.Filled.Size20.CodeBlock())"
+                                  Text="Code"/>
+            </FluentAppBar>
+        </FluentStack>
+    </div>
+    <FluentBodyContent Class="body-content">
+        @Body
+    </FluentBodyContent>
+</FluentStack>
+
+
+
+<FluentToastProvider/>
+<FluentDialogProvider/>
+<FluentTooltipProvider/>
+<FluentMessageBarProvider/>
+<FluentMenuProvider/>

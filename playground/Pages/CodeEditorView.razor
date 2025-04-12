@@ -1,0 +1,39 @@
+@inherits ComponentBase;
+<FluentStack class="h-full w-full">
+    <div class="editor-container">
+        <StandaloneCodeEditor
+            @ref="_codeEditor" CssClass="user-editor-content" ConstructionOptions="EditorConstructionOptions"
+        />
+    </div>
+</FluentStack>
+@code{
+
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+
+    private StandaloneCodeEditor _codeEditor = default!;
+    private StandaloneEditorConstructionOptions EditorConstructionOptions(StandaloneCodeEditor editor)
+    {
+        return new StandaloneEditorConstructionOptions
+        {
+            AutomaticLayout = true,
+            AcceptSuggestionOnCommitCharacter = true,
+            InsertSpaces = true,
+            LineNumbers = "on",
+            Minimap = new EditorMinimapOptions()
+            {
+                Enabled = false
+            },
+            Language = "lua",
+            Value = @"print(""Hello"")"
+        };
+    }
+
+    public Task<string> GetCodeTextAsync()
+    {
+        return _codeEditor?.GetValue() ?? Task.FromResult("");
+    }
+
+}

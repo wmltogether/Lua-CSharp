@@ -12,6 +12,15 @@ public static class OpenLibsExtensions
         {
             state.Environment[func.Name] = func;
         }
+
+        state.OpenFallbackArg();
+    }
+    
+    private static void OpenFallbackArg(this LuaState state)
+    {
+        var args = new LuaTable();
+        args[0] = new LuaValue("");
+        state.Environment["arg"] = args;
     }
 
     public static void OpenBitwiseLibrary(this LuaState state)
@@ -39,16 +48,16 @@ public static class OpenLibsExtensions
 
     public static void OpenIOLibrary(this LuaState state)
     {
+        
         var io = new LuaTable(0, IOLibrary.Instance.Functions.Length);
         foreach (var func in IOLibrary.Instance.Functions)
         {
             io[func.Name] = func;
         }
-
-        io["stdio"] = new LuaValue(new FileHandle(Console.OpenStandardInput()));
-        io["stdout"] = new LuaValue(new FileHandle(Console.OpenStandardOutput()));
-        io["stderr"] = new LuaValue(new FileHandle(Console.OpenStandardError()));
-
+        io["stdio"] = new LuaValue(new FileHandle(LuaConsole.OpenStandardInput()));
+        io["stdout"] = new LuaValue(new FileHandle(LuaConsole.OpenStandardOutput()));
+        io["stderr"] = new LuaValue(new FileHandle(LuaConsole.OpenStandardError()));
+        
         state.Environment["io"] = io;
         state.LoadedModules["io"] = io;
     }
@@ -128,7 +137,7 @@ public static class OpenLibsExtensions
         state.Environment["table"] = table;
         state.LoadedModules["table"] = table;
     }
-    
+
     public static void OpenDebugLibrary(this LuaState state)
     {
         var debug = new LuaTable(0, DebugLibrary.Instance.Functions.Length);
@@ -139,18 +148,6 @@ public static class OpenLibsExtensions
 
         state.Environment["debug"] = debug;
         state.LoadedModules["debug"] = debug;
-    }
-
-    public static void OpenStringExLibrary(this LuaState state)
-    {
-        var stringex = new LuaTable(0, StringExLibrary.Instance.Functions.Length);
-        foreach (var func in StringExLibrary.Instance.Functions)
-        {
-            stringex[func.Name] = func;
-        }
-
-        state.Environment["stringex"] = stringex;
-        state.LoadedModules["stringex"] = stringex;
     }
 
     public static void OpenStandardLibraries(this LuaState state)
@@ -165,10 +162,5 @@ public static class OpenLibsExtensions
         state.OpenStringLibrary();
         state.OpenTableLibrary();
         state.OpenDebugLibrary();
-    }
-
-    public static void OpenExtensionLibraries(this LuaState state)
-    {
-        state.OpenStringExLibrary();
     }
 }
