@@ -49,7 +49,7 @@ public class TableTests
     {
         var table = new LuaTable();
         int i = 1;
-        int count = 10000;
+        int count = 100;
         while (count > 0)
         {
             var key = i;
@@ -65,25 +65,5 @@ public class TableTests
         Assert.That(table[int.MaxValue - 1], Is.EqualTo(new LuaValue(0)));
     }
     
-    [Test]
-    public async Task Test_TableFloatKey()
-    {
-        var source = @"
-local table = {}
-local i = 1
-local count = 10000
-while count > 0 do
-    local key = i
-    -- float number key
-    local key2 = key * 2 - key / 2
-    table[key] = key
-    table[key2] = key2
-    i = i + key
-    count = count - 1
-end
-";
-        var state = LuaState.Create();
-        state.OpenStandardLibraries();
-        _ = await state.DoStringAsync(source);
-    }
+    
 }

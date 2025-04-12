@@ -1,3 +1,5 @@
+using Lua.Standard;
+
 namespace Lua.Tests;
 
 public class LocalTests
@@ -86,5 +88,29 @@ local a = #bodies
 return (test_local(bodies, a))";
         var result = await LuaState.Create().DoStringAsync(source);
         Assert.That(result[0], Is.EqualTo(new LuaValue(2)));
+    }
+
+    [Test]
+    public async Task Test_LocalVariable_4()
+    {
+        var source = @"
+local MENU_ITEMS = {
+  [""test""] = 'test'
+}
+
+local func
+
+do
+  local var = ""test""
+  func = function()
+    print(MENU_ITEMS[var])
+  end
+end
+
+func()
+";
+        var state = LuaState.Create();
+        state.OpenStandardLibraries();
+        _ = await state.DoStringAsync(source);
     }
 }
