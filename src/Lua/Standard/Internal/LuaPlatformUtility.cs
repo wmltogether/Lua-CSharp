@@ -2,16 +2,26 @@ namespace Lua;
 
 public class LuaPlatformUtility
 {
-    public static bool IsSandBox => _supportFileModuleTryLazy.Value;
+    public static bool IsSandBox => _supportStdioTryLazy.Value;
+    public static bool SupportStdio => _supportStdioTryLazy.Value;
     
-    private static Lazy<bool> _supportFileModuleTryLazy = new Lazy<bool>(() =>
+    private static Lazy<bool> _supportStdioTryLazy = new Lazy<bool>(() =>
     {
         try
         {
+#if NET6_0_OR_GREATER
+            var isDesktop = System.OperatingSystem.IsWindows() || 
+                            System.OperatingSystem.IsLinux() || 
+                            System.OperatingSystem.IsMacOS();
+            if (!isDesktop)
+            {
+                return false;
+            }
+#endif
+            _ = Console.OpenStandardInput();
             _ = Console.OpenStandardOutput();
             return true;
         }
-
         catch (Exception)
         {
             return false;
