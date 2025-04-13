@@ -3,8 +3,8 @@
 @using Playground.CodeSpaces
 <div style="padding:10px; width: 100%; height: calc(100dvh - 36px); ">
     <FluentToolbar Orientation="Orientation.Horizontal" Width="100%" Style="height: 48px">
-        <FluentButton Title="Run" IconStart="@(_iconRun)" Appearance="Appearance.Neutral" 
-                       Color="#669462"
+        <FluentButton Title="Run" IconStart="@(_iconRun)" Appearance="Appearance.Neutral"
+                      Color="#669462"
                       OnClick="OnBtnRun_Clicked"
         />
     </FluentToolbar>
@@ -16,7 +16,7 @@
                     </CodeEditorView>
                 </div>
             </FluentStack>
-            
+
         </Panel1>
         <Panel2>
             <div style="min-height: 770px; height: 100%; margin-left: 6px ;margin-right: 6px">
@@ -26,20 +26,21 @@
     </FluentSplitter>
 </div>
 <FluentFooter/>
+
 @code {
-    
+
     private readonly Icon _iconRun = new Size20.Play();
     private Lazy<CodeRunner> _codeRunnerLazy = new Lazy<CodeRunner>(() => new CodeRunner(), true);
 
     private CodeRunner CodeRunner => _codeRunnerLazy.Value;
-    
+
     private OutputPanelView? _outputPanelView;
     private CodeEditorView? _codeEditorView;
-    
+
     private CancellationTokenSource? _cancellationTokenSource;
 
     private string InputValue { get; set; } = "";
-    
+
     private async Task OnBtnRun_Clicked()
     {
         if (_codeEditorView is null) return;
@@ -47,6 +48,7 @@
         {
             _cancellationTokenSource.Cancel();
         }
+
         _cancellationTokenSource = new CancellationTokenSource();
         var code = await _codeEditorView!.GetCodeTextAsync();
         if (string.IsNullOrEmpty(code))

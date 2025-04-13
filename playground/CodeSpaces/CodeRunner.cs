@@ -13,14 +13,15 @@ public class CodeRunner
     {
         Lua,
     }
+
     public ConsoleOutputHandler? ConsoleOutput { get; set; }
+
     public CodeRunner()
     {
-        
     }
-    
+
     private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
-    
+
     public void Reset()
     {
         var c = _currentContext.ToArray();
@@ -28,12 +29,14 @@ public class CodeRunner
         {
             context.Reset();
         }
+
         _currentContext.Clear();
     }
 
     private readonly List<ICodeRunnerContext> _currentContext = new List<ICodeRunnerContext>();
-    
-    public async Task RunAsync(string text, string stdin, ScriptType scriptType, CancellationToken cancellationToken = default)
+
+    public async Task RunAsync(string text, string stdin, ScriptType scriptType,
+        CancellationToken cancellationToken = default)
     {
         var swatch = new Stopwatch();
         try
@@ -52,6 +55,7 @@ public class CodeRunner
                     await luaRunner.RunString(text, stdin, cancellationToken);
                     break;
             }
+
             swatch.Stop();
             var elapsedTime = TimeSpan.FromMilliseconds(swatch.ElapsedMilliseconds);
             if (elapsedTime < TimeSpan.FromMilliseconds(1000))
@@ -62,7 +66,6 @@ public class CodeRunner
             {
                 OnConsoleOutput($"Elapsed Time: {elapsedTime.TotalSeconds}s");
             }
-            
         }
         catch (LuaParseException e)
         {
@@ -74,7 +77,6 @@ public class CodeRunner
         }
         catch (OperationCanceledException)
         {
-            
         }
         catch (PlatformNotSupportedException)
         {
@@ -90,17 +92,16 @@ public class CodeRunner
             _semaphore.Release();
             swatch.Stop();
         }
-
     }
 
     private void WriteInput(string? stdin)
     {
         if (string.IsNullOrEmpty(stdin)) return;
         UTF8Encoding encoding = new UTF8Encoding();
-        ConsoleHelper.OpenStandardInput().Write( stdin?.Length > 0 ? encoding.GetBytes(stdin) : EMPTY1);
+        ConsoleHelper.OpenStandardInput().Write(stdin?.Length > 0 ? encoding.GetBytes(stdin) : EMPTY1);
     }
-    
-    private static readonly byte[] EMPTY1 = new byte[1] ;
+
+    private static readonly byte[] EMPTY1 = new byte[1];
 
     private void OnConsoleOutput(string? value)
     {
@@ -114,4 +115,3 @@ public interface ICodeRunnerContext
     public Task RunString(string script, string stdin, CancellationToken cancellationToken = default);
     public void Reset();
 }
-

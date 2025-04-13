@@ -1,6 +1,7 @@
 using System.Text;
 using Lua;
 using Lua.Standard;
+using Playground.Utility;
 
 namespace Playground.CodeSpaces;
 
@@ -19,8 +20,8 @@ public class LuaRunner : ICodeRunnerContext
     
     private async ValueTask<int> Print(LuaFunctionExecutionContext context, CancellationToken cancellationToken)
     {
-        StringBuilder sb = new();
-        for (int i = 0; i < context.ArgumentCount; i++)
+        var sb = StringBuilderPool.Shared.Allocate();
+        for (var i = 0; i < context.ArgumentCount; i++)
         {
             var useSep = context.ArgumentCount > 1 && i != context.ArgumentCount - 1;
             var arg = context.Arguments[i].ToString();
@@ -28,7 +29,9 @@ public class LuaRunner : ICodeRunnerContext
             if (useSep) sb.Append('\t');
         }
         sb.Append('\n');
-        ConsoleOutput?.Invoke(sb.ToString());
+        var result = sb.ToString();
+        StringBuilderPool.Shared.Release(sb);
+        ConsoleOutput?.Invoke(result);
         return await Task.FromResult(context.Return());
     }
 
