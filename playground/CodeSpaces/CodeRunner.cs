@@ -97,7 +97,7 @@ public class CodeRunner
     {
         if (string.IsNullOrEmpty(stdin)) return;
         UTF8Encoding encoding = new UTF8Encoding();
-        LuaConsole.OpenStandardInput().Write( stdin?.Length > 0 ? encoding.GetBytes(stdin) : EMPTY1);
+        ConsoleHelper.OpenStandardInput().Write( stdin?.Length > 0 ? encoding.GetBytes(stdin) : EMPTY1);
     }
     
     private static readonly byte[] EMPTY1 = new byte[1] ;

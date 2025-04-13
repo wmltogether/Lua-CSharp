@@ -2,7 +2,7 @@ namespace Lua;
 
 public class LuaPlatformUtility
 {
-    public static bool IsSandBox => _supportStdioTryLazy.Value;
+    public static bool IsSandBox => SupportStdio;
     public static bool SupportStdio => _supportStdioTryLazy.Value;
     
     private static Lazy<bool> _supportStdioTryLazy = new Lazy<bool>(() =>

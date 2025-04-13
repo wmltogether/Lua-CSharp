@@ -143,10 +143,6 @@ public sealed class OperatingSystemLibrary
 
     public ValueTask<int> Remove(LuaFunctionExecutionContext context,  CancellationToken cancellationToken)
     {
-        if (LuaPlatformUtility.IsSandBox)
-        {
-            return new (context.Return(LuaValue.Nil, "Operation not supported on this platform."));
-        }
         var fileName = context.GetArgument<string>(0);
         try
         {
@@ -161,10 +157,6 @@ public sealed class OperatingSystemLibrary
 
     public ValueTask<int> Rename(LuaFunctionExecutionContext context,  CancellationToken cancellationToken)
     {
-        if (LuaPlatformUtility.IsSandBox)
-        {
-            return new (context.Return(LuaValue.Nil, "Operation not supported on this platform."));
-        }
         var oldName = context.GetArgument<string>(0);
         var newName = context.GetArgument<string>(1);
         try

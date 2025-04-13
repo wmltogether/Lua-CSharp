@@ -54,9 +54,9 @@ public static class OpenLibsExtensions
         {
             io[func.Name] = func;
         }
-        io["stdio"] = new LuaValue(new FileHandle(LuaConsole.OpenStandardInput()));
-        io["stdout"] = new LuaValue(new FileHandle(LuaConsole.OpenStandardOutput()));
-        io["stderr"] = new LuaValue(new FileHandle(LuaConsole.OpenStandardError()));
+        io["stdio"] = new LuaValue(new FileHandle(ConsoleHelper.OpenStandardInput()));
+        io["stdout"] = new LuaValue(new FileHandle(ConsoleHelper.OpenStandardOutput()));
+        io["stderr"] = new LuaValue(new FileHandle(ConsoleHelper.OpenStandardError()));
         
         state.Environment["io"] = io;
         state.LoadedModules["io"] = io;
