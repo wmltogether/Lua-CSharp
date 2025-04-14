@@ -21,7 +21,7 @@ public sealed class LuaTable
 
     internal LuaValueDictionary Dictionary => dictionary;
     private const int MaxArraySize = 1 << 24;
-    private const int MaxDistance = 1 << 12;
+    private const int MaxDistance = 1 << 9;
 
     public LuaValue this[LuaValue key]
     {
@@ -123,7 +123,7 @@ public sealed class LuaTable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref LuaValue FindValue(LuaValue key)
+    internal ref LuaValue FindValue(in LuaValue key)
     {
         if (key.Type is LuaValueType.Nil)
         {
@@ -200,7 +200,7 @@ public sealed class LuaTable
         array[arrayIndex] = value;
     }
 
-    public bool TryGetNext(LuaValue key, out KeyValuePair<LuaValue, LuaValue> pair)
+    public bool TryGetNext(in LuaValue key, out KeyValuePair<LuaValue, LuaValue> pair)
     {
         var index = -1;
         if (key.Type is LuaValueType.Nil)

@@ -77,7 +77,7 @@ namespace Lua.Internal
             }
         }
 
-        public bool ContainsKey(LuaValue key) =>
+        public bool ContainsKey(in LuaValue key) =>
             !Unsafe.IsNullRef(ref FindValue(key, out _));
 
         public bool ContainsValue(LuaValue value)
@@ -98,7 +98,7 @@ namespace Lua.Internal
 
         public Enumerator GetEnumerator() => new Enumerator(this);
 
-        internal ref LuaValue FindValue(LuaValue key, out int index)
+        internal ref LuaValue FindValue(in LuaValue key, out int index)
         {
             index = -1;
             ref Entry entry = ref Unsafe.NullRef<Entry>();
@@ -281,7 +281,7 @@ namespace Lua.Internal
             _entries = entries;
         }
 
-        public bool Remove(LuaValue key)
+        public bool Remove(in LuaValue key)
         {
             // The overload Remove(LuaValue key, out LuaValue value) is a copy of this method with one additional
             // statement to copy the value for entry being removed into the output parameter.

@@ -1068,7 +1068,7 @@ public static partial class LuaVirtualMachine
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    static bool GetTableValueSlowPath(LuaValue table, LuaValue key, ref VirtualMachineExecutionContext context, out LuaValue value, out bool doRestart)
+    static bool GetTableValueSlowPath(LuaValue table, in LuaValue key, ref VirtualMachineExecutionContext context, out LuaValue value, out bool doRestart)
     {
         var targetTable = table;
         const int MAX_LOOP = 100;
@@ -1112,7 +1112,7 @@ public static partial class LuaVirtualMachine
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    static bool CallGetTableFunc(LuaValue table, LuaFunction indexTable, LuaValue key, ref VirtualMachineExecutionContext context, out LuaValue result, out bool doRestart)
+    static bool CallGetTableFunc(LuaValue table, LuaFunction indexTable, in LuaValue key, ref VirtualMachineExecutionContext context, out LuaValue result, out bool doRestart)
     {
         doRestart = false;
         var stack = context.Stack;
@@ -1157,7 +1157,7 @@ public static partial class LuaVirtualMachine
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    static bool SetTableValueSlowPath(LuaValue table, LuaValue key, LuaValue value,
+    static bool SetTableValueSlowPath(LuaValue table, in LuaValue key, LuaValue value,
         ref VirtualMachineExecutionContext context, out bool doRestart)
     {
         var targetTable = table;

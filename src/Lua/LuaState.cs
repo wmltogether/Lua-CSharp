@@ -146,7 +146,7 @@ public sealed class LuaState
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal void SetMetatable(LuaValue value, LuaTable metatable)
+    internal void SetMetatable(in LuaValue value, LuaTable metatable)
     {
         switch (value.Type)
         {
