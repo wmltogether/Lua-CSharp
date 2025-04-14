@@ -20,8 +20,10 @@ public sealed class Closure : LuaFunction
             var upValue = GetUpValueFromDescription(state, state.CurrentThread, environment == null ? state.EnvUpValue : UpValue.Closed(environment), description);
             upValues.Add(upValue);
         }
-    }
 
+        this.IsClosure = true;
+    }
+    
     public Chunk Proto => proto;
     public ReadOnlySpan<UpValue> UpValues => upValues.AsSpan();
     internal Span<UpValue> GetUpValuesSpan() => upValues.AsSpan();

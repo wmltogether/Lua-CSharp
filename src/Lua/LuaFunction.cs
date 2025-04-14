@@ -6,6 +6,8 @@ public class LuaFunction(string name, Func<LuaFunctionExecutionContext, Cancella
 {
     public string Name { get; } = name;
     internal Func<LuaFunctionExecutionContext, CancellationToken, ValueTask<int>> Func { get; } = func;
+    
+    internal bool IsClosure { get; set; }
 
     public LuaFunction(Func<LuaFunctionExecutionContext, CancellationToken, ValueTask<int>> func) : this("anonymous", func)
     {

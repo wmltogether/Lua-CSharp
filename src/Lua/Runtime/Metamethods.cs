@@ -22,44 +22,42 @@ public static class Metamethods
     public const string IPairs = "__ipairs";
     public new const string ToString = "__tostring";
 
+    private static readonly (string, string) IndexDsc = (Index, "index");
+    private static readonly (string, string) NewIndexDsc = (NewIndex, "new index");
+    private static readonly (string, string) AddDsc = (Add, "add");
+    private static readonly (string, string) SubDsc = (Sub, "sub");
+    private static readonly (string, string) MulDsc = (Mul, "mul");
+    private static readonly (string, string) DivDsc = (Div, "div");
+    private static readonly (string, string) ModDsc = (Mod, "mod");
+    private static readonly (string, string) PowDsc = (Pow, "pow");
+    private static readonly (string, string) UnmDsc = (Unm, "unm");
+    private static readonly (string, string) LenDsc = (Len, "get length of");
+    private static readonly (string, string) EqDsc = (Eq, "eq");
+    private static readonly (string, string) LtDsc = (Lt, "lt");
+    private static readonly (string, string) LeDsc = (Le, "le");
+    private static readonly (string, string) CallDsc = (Call, "call");
+    private static readonly (string, string) ConcatDsc = (Concat, "concat");
+    
     internal static (string Name, string Description) GetNameAndDescription(this OpCode opCode)
     {
-        switch (opCode)
+        return opCode switch
         {
-            case OpCode.GetTabUp:
-            case OpCode.GetTable:
-            case OpCode.Self:
-                return (Index, "index");
-            case OpCode.SetTabUp:
-            case OpCode.SetTable:
-                return (NewIndex, "new index");
-            case OpCode.Add:
-                return (Add, "add");
-            case OpCode.Sub:
-                return (Sub, "sub");
-            case OpCode.Mul:
-                return (Mul, "mul");
-            case OpCode.Div:
-                return (Div, "div");
-            case OpCode.Mod:
-                return (Mod, "mod");
-            case OpCode.Pow:
-                return (Pow, "pow");
-            case OpCode.Unm:
-                return (Unm, "unm");
-            case OpCode.Len:
-                return (Len, "get length of");
-            case OpCode.Eq:
-                return (Eq, "eq");
-            case OpCode.Lt:
-                return (Lt, "lt");
-            case OpCode.Le:
-                return (Le, "le");
-            case OpCode.Call:
-                return (Call, "call");
-            case OpCode.Concat:
-                return (Concat, "concat");
-            default: return (opCode.ToString(), opCode.ToString());
-        }
+            OpCode.GetTabUp or OpCode.GetTable or OpCode.Self => IndexDsc,
+            OpCode.SetTabUp or OpCode.SetTable => NewIndexDsc,
+            OpCode.Add => AddDsc,
+            OpCode.Sub => SubDsc,
+            OpCode.Mul => MulDsc,
+            OpCode.Div => DivDsc,
+            OpCode.Mod => ModDsc,
+            OpCode.Pow => PowDsc,
+            OpCode.Unm => UnmDsc,
+            OpCode.Len => LenDsc,
+            OpCode.Eq => EqDsc,
+            OpCode.Lt => LtDsc,
+            OpCode.Le => LeDsc,
+            OpCode.Call => CallDsc,
+            OpCode.Concat => ConcatDsc,
+            _ => (opCode.ToString(), opCode.ToString())
+        };
     }
 }

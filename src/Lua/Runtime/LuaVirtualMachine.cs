@@ -834,7 +834,7 @@ public static partial class LuaVirtualMachine
             return false;
         }
 
-        if (func is Closure)
+        if (func.IsClosure)
         {
             context.Push(newFrame);
             doRestart = true;
@@ -935,7 +935,7 @@ public static partial class LuaVirtualMachine
         }
 
 
-        if (func is Closure)
+        if (func.IsClosure)
         {
             context.Push(newFrame);
             doRestart = true;
@@ -990,7 +990,7 @@ public static partial class LuaVirtualMachine
             return false;
         }
 
-        if (iterator is Closure)
+        if (iterator.IsClosure)
         {
             context.Push(newFrame);
             doRestart = true;
@@ -1130,7 +1130,7 @@ public static partial class LuaVirtualMachine
             return false;
         }
 
-        if (indexTable is Closure)
+        if (indexTable.IsClosure)
         {
             context.Push(newFrame);
             doRestart = true;
@@ -1230,7 +1230,7 @@ public static partial class LuaVirtualMachine
             return false;
         }
 
-        if (newIndexFunction is Closure)
+        if (newIndexFunction.IsClosure)
         {
             context.Push(newFrame);
             doRestart = true;
@@ -1280,7 +1280,7 @@ public static partial class LuaVirtualMachine
                 return false;
             }
 
-            if (func is Closure)
+            if (func.IsClosure)
             {
                 context.Push(newFrame);
                 doRestart = true;
@@ -1338,7 +1338,7 @@ public static partial class LuaVirtualMachine
                 return false;
             }
 
-            if (func is Closure)
+            if (func.IsClosure)
             {
                 context.Push(newFrame);
                 doRestart = true;
@@ -1404,7 +1404,7 @@ public static partial class LuaVirtualMachine
                 return false;
             }
 
-            if (func is Closure)
+            if (func.IsClosure)
             {
                 context.Push(newFrame);
                 doRestart = true;
