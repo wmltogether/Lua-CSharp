@@ -86,20 +86,19 @@ public static class HexConverter
 
     static int ToInt(char c)
     {
-        // check 0-9
-        if (c >= '0' && c <= '9')
+        unchecked
         {
-            return c - '0';
-        }
-        // check a-f
-        if (c >= 'a' && c <= 'f')
-        {
-            return c - 'a' + 10;
-        }
-        // check A-F
-        if (c >= 'A' && c <= 'F')
-        {
-            return c - 'A' + 10;
+            switch (c)
+            {
+                case < '0':
+                    return 0;
+                case <= '9':
+                    return (c - '0');
+                case >= 'A' and <= 'F':
+                    return (c - 'A' + 10);
+                case >= 'a' and <= 'f':
+                    return (c - 'a' + 10);
+            }
         }
         return 0;
     }
