@@ -46,8 +46,12 @@ internal static class MathEx
         
         unchecked
         {
+            if (size > ArrayMexLength)
+            {
+                return ArrayMexLength;
+            }
             int newSize;
-            newSize = Math.Min(NextPowerOfTwo(size + 1),  (size * 2));
+            newSize = Min(NextPowerOfTwo(size + 1),  (size * 2));
             if ((uint)newSize > ArrayMexLength)
             {
                 newSize = ArrayMexLength;
@@ -94,6 +98,18 @@ internal static class MathEx
     {
         return ((int)Math.Truncate(d), d % 1.0);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static uint Min(uint val1, uint val2)
+    {
+        return val1 > val2 ? val2 : val1;
+    }
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int Min(int val1, int val2) => val1 > val2 ? val2 : val1;
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static long Min(long val1, long val2) => val1 > val2 ? val2 : val1;
 
     /// <summary>Returns the smallest power of two greater than or equal to the input.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
