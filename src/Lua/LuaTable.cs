@@ -267,7 +267,7 @@ public sealed class LuaTable
         var prevLength = array.Length;
         var newLength = array.Length;
         if (newLength == 0) newLength = 8;
-        newLength = newCapacity <= 8 ? 8 : MathEx.NextPowerOfTwo(newCapacity);
+        newLength = newCapacity <= 8 ? 8 : MathEx.NewArrayCapacity(newCapacity);
 
         Array.Resize(ref array, newLength);
 

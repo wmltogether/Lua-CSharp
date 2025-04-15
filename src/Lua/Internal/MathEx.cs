@@ -43,13 +43,18 @@ internal static class MathEx
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int NewArrayCapacity(int size)
     {
-        var newSize = unchecked(size * 2);
-        if ((uint)newSize > ArrayMexLength)
+        
+        unchecked
         {
-            newSize = ArrayMexLength;
-        }
+            int newSize;
+            newSize = Math.Min(NextPowerOfTwo(size + 1),  (size * 2));
+            if ((uint)newSize > ArrayMexLength)
+            {
+                newSize = ArrayMexLength;
+            }
+            return newSize;
 
-        return newSize;
+        }
     }
 
     const long DBL_EXP_MASK = 0x7ff0000000000000L;

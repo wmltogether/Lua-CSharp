@@ -41,7 +41,7 @@ public struct FastStackCore<T>
 
         if (tail == array.Length)
         {
-            Array.Resize(ref array, tail * 2);
+            Array.Resize(ref array, MathEx.NewArrayCapacity(array.Length));
         }
 
         array[tail] = item;
@@ -121,7 +121,7 @@ public struct FastStackCore<T>
             array = new T[InitialCapacity];
         }
 
-        var newSize = capacity <= InitialCapacity ? InitialCapacity : MathEx.NextPowerOfTwo(capacity);
+        var newSize = capacity <= InitialCapacity ? InitialCapacity : MathEx.NewArrayCapacity(capacity);
         if (newSize != array.Length) Array.Resize(ref array, newSize);
     }
 

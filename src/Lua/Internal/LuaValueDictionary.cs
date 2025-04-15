@@ -155,7 +155,7 @@ namespace Lua.Internal
 
         private void Initialize(int capacity)
         {
-            int size = capacity <= InitialCapacity ? InitialCapacity : MathEx.NextPowerOfTwo(capacity);
+            int size = capacity <= InitialCapacity ? InitialCapacity : MathEx.NewArrayCapacity(capacity);
             int[] buckets = new int[size];
             Entry[] entries = new Entry[size];
 
@@ -251,7 +251,12 @@ namespace Lua.Internal
         }
 
 
-        private void Resize() => Resize(_entries!.Length * 2);
+        private void Resize()
+        {
+            var cur = _entries!.Length;
+            var next = cur < 8 ? 8 : MathEx.NewArrayCapacity(cur);
+            Resize(next);
+        }
 
         private void Resize(int newSize)
         {

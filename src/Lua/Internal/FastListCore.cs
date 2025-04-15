@@ -26,8 +26,7 @@ public struct FastListCore<T>
         }
         else if (array.Length == tailIndex)
         {
-            var newSize = Math.Min(MathEx.NextPowerOfTwo(tailIndex + 1), array.Length * 2);
-            Array.Resize(ref array, newSize);
+            Array.Resize(ref array, MathEx.NewArrayCapacity(tailIndex));
         }
 
         array[tailIndex] = element;
@@ -71,7 +70,7 @@ public struct FastListCore<T>
         {
             array = new T[InitialCapacity];
         }
-        var newSize = capacity <= InitialCapacity ? InitialCapacity : MathEx.NextPowerOfTwo(capacity);
+        var newSize = capacity <= InitialCapacity ? InitialCapacity : MathEx.NewArrayCapacity(capacity);
         if (newSize != array.Length) Array.Resize(ref array, newSize);
     }
 
