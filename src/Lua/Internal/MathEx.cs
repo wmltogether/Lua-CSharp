@@ -96,7 +96,7 @@ internal static class MathEx
 #if NET6_0_OR_GREATER
         if (x <= 0) return 0;
         return (int)BitOperations.RoundUpToPowerOf2((uint)x);
-#endif
+#else
         if (x <= 0) return 0;
         x -= 1;
         x |= x >> 1;
@@ -105,5 +105,6 @@ internal static class MathEx
         x |= x >> 8;
         x |= x >> 16;
         return x + 1;
+#endif
     }
 }
