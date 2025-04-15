@@ -28,14 +28,10 @@ internal sealed class StringBuilderPool
         obj.Clear();
         _objectPool.Return(obj);
     }
-
-    /// <summary>
-    /// If someone need to create a private pool
-    /// </summary>
+    
     private static ObjectPool<StringBuilder> CreatePool(int size = 100, int capacity = DefaultPoolCapacity)
     {
-        ObjectPool<StringBuilder> pool = null;
-        pool = new DefaultObjectPool<StringBuilder>(new StringBuilderPooledObjectPolicy()
+        ObjectPool<StringBuilder> pool = new DefaultObjectPool<StringBuilder>(new StringBuilderPooledObjectPolicy()
         {
             InitialCapacity = size,
             MaximumRetainedCapacity = capacity,
